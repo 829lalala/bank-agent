@@ -1,0 +1,27 @@
+# ---- Java / Maven 构建产物 ----
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# ---- 运行时数据（向量库落盘文件，可随时重新摄取生成） ----
+data/
+
+# ---- 个人文件（学生手册为扫描型 PDF 且含个人信息，不入库） ----
+docs/knowledge/*.pdf
+
+# ---- IDE 与编辑器 ----
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+
+# ---- 日志与临时文件 ----
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# ---- 环境变量文件（密钥安全） ----
+.env
+.env.*
