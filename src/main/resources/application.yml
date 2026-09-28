@@ -1,0 +1,24 @@
+# 应用配置文件（YAML 格式：用缩进表示层级，注意冒号后有一个空格）
+spring:
+  application:
+    name: bank-agent # 应用名，会显示在日志和监控中
+  ai:
+    openai:
+      # 智谱开放平台的 OpenAI 兼容端点。
+      # 拼接规则：Spring AI 2.0 会在此地址后自动追加 /chat/completions，
+      # 最终请求 https://open.bigmodel.cn/api/paas/v4/chat/completions
+      base-url: https://open.bigmodel.cn/api/paas/v4
+      # API 密钥从环境变量 ZHIPUAGENT_API_KEY 读取（密钥不能提交到代码仓库）。
+      # 冒号后是默认值：未设置环境变量时报错信息里会显示这段提示文字。
+      api-key: ${ZHIPUAGENT_API_KEY:请设置环境变量ZHIPUAGENT_API_KEY}
+      chat:
+        # 模型名：glm-4-flash 为智谱免费模型，适合学习调试；
+        # 后续可换成 glm-4.6 等更强模型（以智谱官网模型列表为准）
+        model: glm-4-flash
+        # 温度参数：0~1，越高回答越随机有创意，越低越稳定确定。
+        # 银行业务场景追求稳定，通常设低一些
+        temperature: 0.7
+      embedding:
+        # 向量化模型（RAG 用）：把文本转成向量。同样是 OpenAI 兼容属性，
+        # base-url 和 api-key 自动继承上面的全局配置
+        model: embedding-3
