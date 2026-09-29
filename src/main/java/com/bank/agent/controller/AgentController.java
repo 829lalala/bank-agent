@@ -41,12 +41,14 @@ public class AgentController {
 
     private final ChatClient chatClient;
     private final KnowledgeTools knowledgeTools;
+    private final BankTools bankTools;
     private final Advisor memoryAdvisor;
 
-    public AgentController(SimpleVectorStore vectorStore, ChatMemory chatMemory,
-                           ChatClient.Builder chatClientBuilder) {
+    public AgentController(BankTools bankTools, KnowledgeTools knowledgeTools,
+                           ChatMemory chatMemory, ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();
-        this.knowledgeTools = new KnowledgeTools(vectorStore);
+        this.knowledgeTools = knowledgeTools;
+        this.bankTools = bankTools;
         // 记忆顾问：请求前回放历史消息、响应后把本轮对话写入记忆
         this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
     }
@@ -72,7 +74,7 @@ public class AgentController {
 
         Flux<String> body = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
-                .tools(new BankTools(), knowledgeTools)
+                .tools(bankTools, knowledgeTools)
                 .user(q)
                 .advisors(memoryAdvisor)
                 // 2.0 新要求：记忆顾问必须显式拿到会话 ID，通过 advisor 参数传递
