@@ -1,0 +1,10 @@
+target/
+.git/
+data/
+docs/knowledge/*.pdf
+*.log
+.idea/
+.vscode/
+*.iml
+README.md
+docs/interview-qa-handbook.md
