@@ -57,6 +57,13 @@
             <artifactId>spring-ai-pdf-document-reader</artifactId>
         </dependency>
 
+        <!-- MCP Server（WebMVC/SSE 传输）：把本应用的工具暴露为 MCP 服务，
+             供 Cursor、Claude Desktop 等任何 MCP 客户端调用 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
+
         <!-- Lombok：注解自动生成 getter/setter 等样板代码 -->
         <dependency>
             <groupId>org.projectlombok</groupId>

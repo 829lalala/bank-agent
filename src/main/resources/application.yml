@@ -3,6 +3,11 @@ spring:
   application:
     name: bank-agent # 应用名，会显示在日志和监控中
   ai:
+    mcp:
+      server:
+        # MCP 服务标识：客户端连接后看到的名称与版本
+        name: bank-agent-mcp
+        version: 0.0.1
     openai:
       # 智谱开放平台的 OpenAI 兼容端点。
       # 拼接规则：Spring AI 2.0 会在此地址后自动追加 /chat/completions，
