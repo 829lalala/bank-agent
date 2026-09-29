@@ -1,6 +1,7 @@
 package com.bank.agent.controller;
 
 import com.bank.agent.config.RagConfig;
+import com.bank.agent.guard.PathGuard;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
@@ -58,18 +59,14 @@ public class RagController {
      */
     @PostMapping("/load")
     public String load(@RequestParam(defaultValue = KNOWLEDGE_FILE) String path) {
-        // 安全护栏：路径规范化 + 白名单目录校验，防止 ../ 穿越读取任意文件
-        //（如 ?path=../../pom.xml 或 ?path=C:/Windows/...）
-        Path baseDir = Path.of("docs/knowledge").toAbsolutePath().normalize();
-        Path target = baseDir.resolve(path).normalize();
-        if (!target.startsWith(baseDir)) {
-            return "拒绝访问：文档路径必须位于 docs/knowledge 目录内。";
+        // 安全护栏：路径校验抽到 PathGuard（纯函数，可被单元测试穷举覆盖）
+        Path target;
+        try {
+            target = PathGuard.resolve(path);
+        } catch (IllegalArgumentException e) {
+            return e.getMessage();
         }
         String fileName = target.getFileName().toString();
-        String lowerName = fileName.toLowerCase();
-        if (!lowerName.endsWith(".md") && !lowerName.endsWith(".pdf")) {
-            return "仅支持 .md 与 .pdf 文档。";
-        }
 
         // ① 读：按扩展名选择读取器，统一产出 List<Document>
         FileSystemResource resource = new FileSystemResource(target.toFile());
