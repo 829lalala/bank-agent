@@ -3,11 +3,11 @@
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.1-brightgreen)
 ![Spring AI](https://img.shields.io/badge/Spring%20AI-2.0.1-green)
-![LLM](https://img.shields.io/badge/LLM-GLM%20(glm--4--flash)-blue)
+![LLM](<https://img.shields.io/badge/LLM-GLM%20(glm--4--flash)-blue>)
 ![MCP](https://img.shields.io/badge/MCP-Server-8A2BE2)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)
-![Tests](https://img.shields.io/badge/Tests-21%20passed-success)
-![Eval](https://img.shields.io/badge/RAG%20Eval-92.3%25%20%2F%2086.7%25-success)
+![Tests](https://img.shields.io/badge/Tests-26%20passed-success)
+![Eval](https://img.shields.io/badge/RAG%20Eval-100%25%20%2F%20~86%25-success)
 
 > 基于 Spring Boot 4.1 + Spring AI 2.0 + GLM 大模型构建的多能力智能体，以合规要求最严苛的**金融场景**完成技术验证。架构层与业务解耦，可迁移至任意企业知识域。
 >
@@ -15,18 +15,18 @@
 
 ## ✨ 功能亮点
 
-| 能力 | 说明 | 技术要点 |
-|---|---|---|
-| 🔍 **Agentic RAG** | 知识库检索封装为工具，模型自主决策"何时查库"，回答附带来源标注 | 结构化切分 → 向量化 → 检索 → 引用溯源 |
-| 🛠️ **Function Calling** | 查询余额、计算存款利息等业务工具，模型自主路由 | `@Tool` 声明式工具；模型只"点菜"，执行在 JVM |
-| 🔌 **MCP Server** | 三个工具以标准 MCP 协议暴露，Cursor/Claude Desktop 等客户端可直接调用 | spring-ai-starter-mcp-server-webmvc（SSE 传输） |
-| 💬 **多轮会话记忆** | 支持指代词追问（"那它的风险等级呢？"） | MessageWindowChatMemory 滑动窗口 + 会话隔离 |
-| 🌊 **SSE 流式输出** | 产品级聊天网页：欢迎引导、思考动画、来源标签、停止生成 | Reactor Flux + Server-Sent Events |
-| 🛡️ **安全护栏** | 输入拦截（敏感词/长度）、路径穿越防御 | 程序级护栏在进入模型之前生效 |
-| 📊 **可观测性** | 自研 Advisor 记录耗时、token 用量、工具调用日志 | Advisor 链 = AI 领域的 AOP |
-| 🧪 **两层评估体系** | 检索层命中率 92.3% / 生成层通过率 86.7%，变更回归防线 | 15 例评估集：事实型/对比型/无答案型 |
-| 📄 **多格式知识接入** | Markdown（按标题切分）+ PDF（按页提取），摄取后自动落盘 | DocumentReader 可插拔 |
-| 🐳 **容器化部署** | 多阶段构建 + compose 编排，数据卷持久化 | 构建层注入阿里云 Maven 镜像 |
+| 能力                    | 说明                                                                  | 技术要点                                        |
+| ----------------------- | --------------------------------------------------------------------- | ----------------------------------------------- |
+| 🔍 **Agentic RAG**      | 知识库检索封装为工具，模型自主决策"何时查库"，回答附带来源标注        | 结构化切分 → 向量化 → 检索 → 引用溯源           |
+| 🛠️ **Function Calling** | 查询余额、计算存款利息等业务工具，模型自主路由                        | `@Tool` 声明式工具；模型只"点菜"，执行在 JVM    |
+| 🔌 **MCP Server**       | 三个工具以标准 MCP 协议暴露，Cursor/Claude Desktop 等客户端可直接调用 | spring-ai-starter-mcp-server-webmvc（SSE 传输） |
+| 💬 **多轮会话记忆**     | 支持指代词追问（"那它的风险等级呢？"）                                | MessageWindowChatMemory 滑动窗口 + 会话隔离     |
+| 🌊 **SSE 流式输出**     | 产品级聊天网页：欢迎引导、思考动画、来源标签、停止生成                | Reactor Flux + Server-Sent Events               |
+| 🛡️ **安全护栏**         | 输入拦截（敏感词/长度）、路径穿越防御                                 | 程序级护栏在进入模型之前生效                    |
+| 📊 **可观测性**         | 自研 Advisor 记录耗时、token 用量、工具调用日志                       | Advisor 链 = AI 领域的 AOP                      |
+| 🧪 **两层评估体系**     | 检索层命中率 92.3% / 生成层通过率 86.7%，变更回归防线                 | 15 例评估集：事实型/对比型/无答案型             |
+| 📄 **多格式知识接入**   | Markdown（按标题切分）+ PDF（按页提取），摄取后自动落盘               | DocumentReader 可插拔                           |
+| 🐳 **容器化部署**       | 多阶段构建 + compose 编排，数据卷持久化                               | 构建层注入阿里云 Maven 镜像                     |
 
 ## 🏗️ 架构
 
@@ -56,26 +56,27 @@
 
 ## 🧰 技术栈
 
-| 类别 | 选型 |
-|---|---|
-| 框架 | Spring Boot 4.1.1 / Spring AI 2.0.1 / Java 21 |
+| 类别   | 选型                                                                 |
+| ------ | -------------------------------------------------------------------- |
+| 框架   | Spring Boot 4.1.1 / Spring AI 2.0.1 / Java 21                        |
 | 大模型 | 智谱 GLM（glm-4-flash 对话 / embedding-3 向量），OpenAI 兼容端点接入 |
-| 测试 | JUnit 5 + Mockito（21 个单元测试）+ 两层评估集（15 例） |
-| 部署 | Docker 多阶段构建 + docker-compose |
+| 测试   | JUnit 5 + Mockito（21 个单元测试）+ 两层评估集（15 例）              |
+| 部署   | Docker 多阶段构建 + docker-compose                                   |
 
 ## 📊 核心指标
 
-| 指标 | 数值 | 说明 |
-|---|---|---|
-| 检索层命中率 | **92.3%**（12/13） | 15 例评估集，topK=3 命中标准答案 |
-| 生成层通过率 | **86.7%**（13/15） | 完整 Agent 链路，关键事实断言 + 拒答测试 |
-| 单元测试 | **21/21 通过** | 护栏 / 路径守卫 / 业务工具 / 检索格式化 |
-| 单次问答成本 | ~1240 tokens / ~3s | ObservabilityAdvisor 实测（提示占 97%） |
-| MCP 工具 | 3 个 | 完整握手验证：initialize / tools/list |
+| 指标         | 数值                | 说明                                                               |
+| ------------ | ------------------- | ------------------------------------------------------------------ |
+| 检索层命中率 | **100%**（13/13）   | 15 例评估集，topK=3 命中标准答案（修复评估污染后）                 |
+| 生成层通过率 | **80%~87%**（波动） | 完整 Agent 链路，关键事实断言 + 拒答测试；边缘用例受模型随机性影响 |
+| 单元测试     | **26/26 通过**      | 护栏 / 路径守卫 / 业务工具 / 检索格式化                            |
+| 单次问答成本 | ~1240 tokens / ~3s  | ObservabilityAdvisor 实测（提示占 97%）                            |
+| MCP 工具     | 3 个                | 完整握手验证：initialize / tools/list                              |
 
 ## 🚀 快速开始
 
 ### 方式一：本地运行
+
 ```bash
 # 1. 配置密钥（Windows PowerShell）
 $env:ZHIPUAGENT_API_KEY = "你的智谱APIKey"   # 申请：https://open.bigmodel.cn/
@@ -88,18 +89,20 @@ curl -X POST http://localhost:8080/rag/load
 ```
 
 ### 方式二：Docker 部署
+
 ```bash
 $env:ZHIPUAGENT_API_KEY = "你的智谱APIKey"
 docker compose up -d          # 向量数据挂载在 ./data，重建不丢
 ```
 
 ### 访问入口
-| 入口 | URL | 说明 |
-|---|---|---|
-| 网页对话 | http://localhost:8080/chat.html | 完整聊天界面（打字机效果） |
-| Agent 对话 | `GET /agent/chat?q=问题&conversationId=会话ID` | 工具 + RAG + 记忆全能力 |
-| 知识摄取 | `POST /rag/load` | 支持指定 `?path=文档名`（md/pdf） |
-| MCP 端点 | `GET /sse` | 标准 MCP 协议，客户端可发现 3 个工具 |
+
+| 入口       | URL                                            | 说明                                 |
+| ---------- | ---------------------------------------------- | ------------------------------------ |
+| 网页对话   | http://localhost:8080/chat.html                | 完整聊天界面（打字机效果）           |
+| Agent 对话 | `GET /agent/chat?q=问题&conversationId=会话ID` | 工具 + RAG + 记忆全能力              |
+| 知识摄取   | `POST /rag/load`                               | 支持指定 `?path=文档名`（md/pdf）    |
+| MCP 端点   | `GET /sse`                                     | 标准 MCP 协议，客户端可发现 3 个工具 |
 
 ## 🧪 质量保障
 
@@ -148,7 +151,7 @@ src/test/java/com/bank/agent/
 
 - [ ] PGVector 迁移（生产级向量存储，验证 VectorStore 接口可移植性）
 - [ ] 用户鉴权与会话绑定（查余额工具接入真实用户体系）
-- [ ] 对比型问题优化（查询改写 / 动态 topK）
+- [x] ~~对比型问题优化~~（已闭环：真因是评估测试重复摄取污染向量库，非 topK 不足；修复摄取幂等性后检索层 100%，Agent 层新增工具描述引导的查询拆分）
 - [ ] CI 流水线（GitHub Actions：测试 + 评估 + 镜像构建）
 
 ## 📄 说明
