@@ -18,7 +18,9 @@ spring:
       api-key: ${ZHIPUAGENT_API_KEY:请设置环境变量ZHIPUAGENT_API_KEY}
       chat:
         # 模型名：glm-4-flash 为智谱免费模型，适合学习调试；
-        # 后续可换成 glm-4.6 等更强模型（以智谱官网模型列表为准）
+        # glm-4-plus 为更强模型（提示词遵循度更好，计费）——
+        # 实测长期画像注入在 flash 下会被无视（记住但反问），plus 下完全遵循，
+        # 面试演示长期记忆时建议临时切换 plus，对比结论见 docs/interview-qa-handbook.md
         model: glm-4-flash
         # 温度参数：0~1，越高回答越随机有创意，越低越稳定确定。
         # 银行业务场景追求稳定，通常设低一些
