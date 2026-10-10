@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
+import com.bank.agent.memory.LongTermMemoryService;
 import com.bank.agent.prompts.Prompts;
 import com.bank.agent.tool.BankTools;
 import com.bank.agent.tool.KnowledgeTools;
@@ -46,12 +47,14 @@ public class ReflectionService {
             """;
 
     private final ChatClient chatClient;
+    private final LongTermMemoryService memory;
 
     public ReflectionService(BankTools bankTools, KnowledgeTools knowledgeTools,
-                             ChatClient.Builder chatClientBuilder) {
+                             LongTermMemoryService memory, ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();
         this.bankTools = bankTools;
         this.knowledgeTools = knowledgeTools;
+        this.memory = memory;
     }
 
     private final BankTools bankTools;
@@ -71,25 +74,28 @@ public class ReflectionService {
     }
 
     /**
-     * 执行反思循环。
+     * 执行反思循环（含长期记忆注入与画像抽取）。
      *
      * @param question 用户问题
+     * @param userId   用户标识：决定注入哪些长期画像事实
      * @return 评审轨迹与最终答案
      */
-    public ReflectionOutcome reflect(String question) {
+    public ReflectionOutcome reflect(String question, String userId) {
         long start = System.currentTimeMillis();
         List<RoundRecord> rounds = new ArrayList<>();
         String answer = null;
         ReviewResult review = null;
         int round = 0;
+        // 长期画像注入：每个生成/修正轮共用同一份个性化 System Prompt
+        String system = Prompts.AGENT_SYSTEM_PROMPT + memory.buildContext(userId);
 
         while (true) {
             round++;
             // 生成（第 1 轮）或修正（后续轮）
             if (round == 1) {
-                answer = generate(question);
+                answer = generate(question, system);
             } else {
-                answer = revise(question, answer, review.suggestion());
+                answer = revise(question, answer, review.suggestion(), system);
             }
 
             // 评审
@@ -100,16 +106,18 @@ public class ReflectionService {
             // 通过，或达到修正上限：结束
             if (review.pass() || round > MAX_REVISE_ROUNDS) {
                 boolean passed = review.pass();
+                // 对话结束：抽取长期画像事实（失败不影响主流程）
+                memory.extractAndStore(userId, question, answer);
                 return new ReflectionOutcome(question, answer, passed, rounds,
                         System.currentTimeMillis() - start);
             }
         }
     }
 
-    /** 生成初答（与 /agent/chat 相同链路：Agent 人设 + 全部工具） */
-    private String generate(String question) {
+    /** 生成初答（与 /agent/chat 相同链路：Agent 人设 + 长期画像 + 全部工具） */
+    private String generate(String question, String system) {
         return chatClient.prompt()
-                .system(Prompts.AGENT_SYSTEM_PROMPT)
+                .system(system)
                 .tools(bankTools, knowledgeTools)
                 .user(question)
                 .call()
@@ -134,13 +142,13 @@ public class ReflectionService {
     }
 
     /** 修正：携带评审意见重新生成完整回答 */
-    private String revise(String question, String previousAnswer, String feedback) {
+    private String revise(String question, String previousAnswer, String feedback, String system) {
         String user = "【用户问题】\n" + question
                 + "\n\n【你的上一轮回答】\n" + previousAnswer
                 + "\n\n【评审意见】\n" + feedback
                 + "\n\n请根据评审意见输出修正后的完整回答（不要提及评审过程）。";
         return chatClient.prompt()
-                .system(Prompts.AGENT_SYSTEM_PROMPT)
+                .system(system)
                 .tools(bankTools, knowledgeTools)
                 .user(user)
                 .call()

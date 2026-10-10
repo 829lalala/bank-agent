@@ -1,6 +1,7 @@
 package com.bank.agent.controller;
 
 import com.bank.agent.guard.GuardRail;
+import com.bank.agent.memory.LongTermMemoryService;
 import com.bank.agent.observation.ObservabilityAdvisor;
 import com.bank.agent.prompts.Prompts;
 import com.bank.agent.service.ReflectionService;
@@ -36,14 +37,16 @@ public class AgentController {
     private final BankTools bankTools;
     private final Advisor memoryAdvisor;
     private final ReflectionService reflectionService;
+    private final LongTermMemoryService memory;
 
     public AgentController(BankTools bankTools, KnowledgeTools knowledgeTools,
                            ChatMemory chatMemory, ChatClient.Builder chatClientBuilder,
-                           ReflectionService reflectionService) {
+                           ReflectionService reflectionService, LongTermMemoryService memory) {
         this.chatClient = chatClientBuilder.build();
         this.knowledgeTools = knowledgeTools;
         this.bankTools = bankTools;
         this.reflectionService = reflectionService;
+        this.memory = memory;
         // 记忆顾问：请求前回放历史消息、响应后把本轮对话写入记忆
         this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
     }
@@ -58,7 +61,8 @@ public class AgentController {
      */
     @GetMapping("/chat")
     public ResponseEntity<Flux<String>> chat(@RequestParam String q,
-                                             @RequestParam(defaultValue = "default") String conversationId) {
+                                             @RequestParam(defaultValue = "default") String conversationId,
+                                             @RequestParam(defaultValue = "guest") String userId) {
         // 输入护栏：在进入模型之前拦截（省钱、快速失败、比模型自我审查更可靠）
         String blocked = GuardRail.check(q);
         if (blocked != null) {
@@ -67,8 +71,10 @@ public class AgentController {
                     .body(Flux.just(blocked));
         }
 
+        StringBuilder answerBuf = new StringBuilder();
         Flux<String> body = chatClient.prompt()
-                .system(Prompts.AGENT_SYSTEM_PROMPT)
+                // 长期画像注入：个性化 System Prompt（无事实时不追加）
+                .system(Prompts.AGENT_SYSTEM_PROMPT + memory.buildContext(userId))
                 .tools(bankTools, knowledgeTools)
                 .user(q)
                 .advisors(memoryAdvisor)
@@ -76,11 +82,25 @@ public class AgentController {
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .advisors(new ObservabilityAdvisor()) // 可观测性：耗时 + token 用量
                 .stream()
-                .content();
+                .content()
+                // 累积回答文本，流结束后抽取长期画像事实（抽取失败不影响已完成的响应）
+                .doOnNext(answerBuf::append)
+                .doFinally(sig -> memory.extractAndStore(userId, q, answerBuf.toString()));
 
         return ResponseEntity.ok()
                 .contentType(new MediaType("text", "event-stream", StandardCharsets.UTF_8))
                 .body(body);
+    }
+
+    /**
+     * 查看用户长期画像（调试与管理用）。
+     *
+     * @param userId 用户标识
+     * @return 该用户当前的全部画像事实
+     */
+    @GetMapping("/memory")
+    public List<String> memory(@RequestParam(defaultValue = "guest") String userId) {
+        return memory.recall(userId);
     }
 
     /**
@@ -91,16 +111,18 @@ public class AgentController {
      * <p>与 /chat 的区别：多 2~4 次 LLM 调用（评审 + 修正），延迟更高，
      * 但回答经过质量评审与自动修正，返回评审轨迹便于审计。
      *
-     * @param q 用户问题
+     * @param q      用户问题
+     * @param userId 用户标识：注入长期画像 + 对话后更新画像
      * @return 最终答案 + 评审轨迹
      */
     @GetMapping("/chat-reflect")
-    public ReflectionOutcome chatReflect(@RequestParam String q) {
+    public ReflectionOutcome chatReflect(@RequestParam String q,
+                                         @RequestParam(defaultValue = "guest") String userId) {
         // 输入护栏：与 /chat 相同标准
         String blocked = GuardRail.check(q);
         if (blocked != null) {
             return new ReflectionOutcome(q, blocked, false, List.of(), 0);
         }
-        return reflectionService.reflect(q);
+        return reflectionService.reflect(q, userId);
     }
 }
