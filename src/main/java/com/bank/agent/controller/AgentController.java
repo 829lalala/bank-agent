@@ -2,13 +2,15 @@ package com.bank.agent.controller;
 
 import com.bank.agent.guard.GuardRail;
 import com.bank.agent.observation.ObservabilityAdvisor;
+import com.bank.agent.prompts.Prompts;
+import com.bank.agent.service.ReflectionService;
+import com.bank.agent.service.ReflectionService.ReflectionOutcome;
 import com.bank.agent.tool.BankTools;
 import com.bank.agent.tool.KnowledgeTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * Agent 接口：工具调用 + Agentic RAG + 多轮记忆的完整智能助手。
@@ -26,32 +29,21 @@ import java.nio.charset.StandardCharsets;
 @RequestMapping("/agent")
 public class AgentController {
 
-    /** System Prompt：约束模型行为边界（Agent 的"人设 + 纪律"） */
-    private static final String SYSTEM_PROMPT = """
-            你是银行的智能业务助手，称呼为"星辰小助手"。
-            行为准则：
-            0. 凡涉及本行产品（存款、理财、信用卡、贷款）或业务规则的问题，必须先调用知识库检索工具获取资料，禁止凭记忆回答；
-            1. 产品信息（利率、金额、期限、规则）必须以知识库检索工具返回的资料为准，数字不得改动；
-            2. 资料中没有的信息，如实告知"知识库中没有相关信息"，绝不编造；
-            3. 涉及账户数据的操作（如查余额）必须通过工具获取，不得虚构数字；
-            4. 回答简洁、礼貌、专业；
-            5. 回答引用了资料的产品信息时，须在对应句末标注依据来源，格式：（依据：资料N）。
-               未引用资料的回答不要标注；
-            6. 收益比较类问题：必须先分别计算各方收益（优先使用工具），统一为年化口径后再比较，
-               并明确提示产品风险等级差异（如定期存款保本、理财为业绩比较基准且非保本），
-               不得直接比较不同期限的收益金额。
-            """;
+    /** Agent 行为准则集中管理于 Prompts（与反思服务、评估测试共享，消除副本漂移） */
 
     private final ChatClient chatClient;
     private final KnowledgeTools knowledgeTools;
     private final BankTools bankTools;
     private final Advisor memoryAdvisor;
+    private final ReflectionService reflectionService;
 
     public AgentController(BankTools bankTools, KnowledgeTools knowledgeTools,
-                           ChatMemory chatMemory, ChatClient.Builder chatClientBuilder) {
+                           ChatMemory chatMemory, ChatClient.Builder chatClientBuilder,
+                           ReflectionService reflectionService) {
         this.chatClient = chatClientBuilder.build();
         this.knowledgeTools = knowledgeTools;
         this.bankTools = bankTools;
+        this.reflectionService = reflectionService;
         // 记忆顾问：请求前回放历史消息、响应后把本轮对话写入记忆
         this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
     }
@@ -76,7 +68,7 @@ public class AgentController {
         }
 
         Flux<String> body = chatClient.prompt()
-                .system(SYSTEM_PROMPT)
+                .system(Prompts.AGENT_SYSTEM_PROMPT)
                 .tools(bankTools, knowledgeTools)
                 .user(q)
                 .advisors(memoryAdvisor)
@@ -89,5 +81,26 @@ public class AgentController {
         return ResponseEntity.ok()
                 .contentType(new MediaType("text", "event-stream", StandardCharsets.UTF_8))
                 .body(body);
+    }
+
+    /**
+     * 反思模式对话（同步 JSON）：生成 → 评审 → 修正循环（Evaluator-Optimizer）。
+     * 用法示例：
+     *   GET http://localhost:8080/agent/chat-reflect?q=我有1万块存三年定期和买稳盈90天哪个划算
+     *
+     * <p>与 /chat 的区别：多 2~4 次 LLM 调用（评审 + 修正），延迟更高，
+     * 但回答经过质量评审与自动修正，返回评审轨迹便于审计。
+     *
+     * @param q 用户问题
+     * @return 最终答案 + 评审轨迹
+     */
+    @GetMapping("/chat-reflect")
+    public ReflectionOutcome chatReflect(@RequestParam String q) {
+        // 输入护栏：与 /chat 相同标准
+        String blocked = GuardRail.check(q);
+        if (blocked != null) {
+            return new ReflectionOutcome(q, blocked, false, List.of(), 0);
+        }
+        return reflectionService.reflect(q);
     }
 }

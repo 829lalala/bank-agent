@@ -28,21 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 class RagAnswerEvaluationTest {
 
-    /** 与 AgentController.SYSTEM_PROMPT 保持同步（private 无法直接引用，若修改需手动同步） */
-    private static final String SYSTEM_PROMPT = """
-            你是银行的智能业务助手，称呼为"星辰小助手"。
-            行为准则：
-            0. 凡涉及本行产品（存款、理财、信用卡、贷款）或业务规则的问题，必须先调用知识库检索工具获取资料，禁止凭记忆回答；
-            1. 产品信息（利率、金额、期限、规则）必须以知识库检索工具返回的资料为准，数字不得改动；
-            2. 资料中没有的信息，如实告知"知识库中没有相关信息"，绝不编造；
-            3. 涉及账户数据的操作（如查余额）必须通过工具获取，不得虚构数字；
-            4. 回答简洁、礼貌、专业；
-            5. 回答引用了资料的产品信息时，须在对应句末标注依据来源，格式：（依据：资料N）。
-               未引用资料的回答不要标注；
-            6. 收益比较类问题：必须先分别计算各方收益（优先使用工具），统一为年化口径后再比较，
-               并明确提示产品风险等级差异（如定期存款保本、理财为业绩比较基准且非保本），
-               不得直接比较不同期限的收益金额。
-            """;
+    /** 直接引用公共提示词常量（此前为手动同步副本，Prompts 抽取后消除漂移隐患） */
+    private static final String SYSTEM_PROMPT = com.bank.agent.prompts.Prompts.AGENT_SYSTEM_PROMPT;
 
     @Autowired
     ChatClient.Builder chatClientBuilder;
