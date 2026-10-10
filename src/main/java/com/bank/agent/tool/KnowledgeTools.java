@@ -24,10 +24,14 @@ public class KnowledgeTools {
         this.vectorStore = vectorStore;
     }
 
-    @Tool(description = "在银行产品知识库中检索资料。当用户询问本行产品（存款利率、理财、信用卡、贷款）或业务办理规则时调用；闲聊、查余额、算利息不要调用")
+    @Tool(description = "在银行产品知识库中检索资料。当用户询问本行产品（存款利率、理财、信用卡、贷款）或业务办理规则时调用；闲聊、查余额、算利息不要调用。"
+            + "对比多个产品的问题，请分别检索每个产品（每次调用只查一个产品），例如问'A和B哪个好'应分两次调用：一次查A、一次查B")
     public String searchBankKnowledge(
             @ToolParam(description = "检索关键词或问题，例如：大额存单 起购金额") String query) {
-        // 检索知识库中最相似的 3 个片段（与 /rag/ask 相同的检索逻辑）
+        // 检索知识库中最相似的 3 个片段（与 /rag/ask 相同的检索逻辑）。
+        // 排查记录：E13（对比型）曾误报 MISS，归因"topK 不足"——加 MISS 诊断打印后
+        // 发现真因是评估测试重复摄取，重复主题占满窗口挤出另一主题；
+        // 干净库上 topK=3 即可 13/13 全过，故保持 3（窗口小、噪声少）
         List<Document> hits = vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(query)

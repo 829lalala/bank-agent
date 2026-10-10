@@ -10,6 +10,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.bank.agent.config.RagConfig;
 import com.bank.agent.controller.RagController;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
@@ -42,8 +43,13 @@ class RagRetrievalEvaluationTest {
     @Test
     @Order(1)
     void 前置_摄取知识库() {
-        // 复用生产摄取逻辑（含落盘）。若 data/vector-store.json 已恢复数据，
-        // 本次会追加重复向量——对"包含关键事实"的断言无影响
+        // 幂等防护：落盘文件存在说明 @SpringBootTest 启动时已恢复历史向量，
+        // 此时再摄取会追加重复文档——重复主题会占满 topK 窗口，把对比型问题
+        // 的另一主题挤出（曾导致 E13 误报 MISS，评估结论失真）
+        if (RagConfig.DATA_FILE.exists()) {
+            System.out.println("[前置] 落盘向量库已存在（启动时已恢复），跳过重复摄取");
+            return;
+        }
         String result = ragController.load("bank-knowledge.md");
         System.out.println("[前置] " + result);
     }
@@ -67,6 +73,15 @@ class RagRetrievalEvaluationTest {
                 hit++;
             } else {
                 failures.add(c.id() + " " + c.question() + " 期望: " + c.expectedFacts());
+                // MISS 时打印召回内容：评估失败必须可解释，否则只能靠猜
+                System.out.printf("    [诊断] %s 的 top%d 召回：%n", c.id(), TOP_K);
+                if (hits != null) {
+                    for (Document d : hits) {
+                        String text = d.getText().replaceAll("\\s+", " ");
+                        String preview = text.length() > 80 ? text.substring(0, 80) + "..." : text;
+                        System.out.printf("    - %s%n", preview);
+                    }
+                }
             }
             System.out.printf("[%s] %s %s%n", ok ? "PASS" : "MISS", c.id(), c.question());
         }
