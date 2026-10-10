@@ -39,4 +39,18 @@ class BankToolsTest {
         String result = tools.calcFixedDepositInterest(10000, 5);
         assertTrue(result.contains("仅支持"), "非法年限应返回友好提示而不是抛异常");
     }
+
+    @Test
+    void 理财收益_90天_数学正确() {
+        // 10000 × 2.85% × 90/365 = 70.27（ReAct 验证时模型心算为 77.75 的错误，应由工具修正）
+        String result = tools.calcWealthManagementReturn(10000, 2.85, 90);
+        assertTrue(result.contains("70.27"), "90 天理财预估收益应为 70.27，实际: " + result);
+        assertTrue(result.contains("非保本"), "结果必须含非保本风险提示");
+    }
+
+    @Test
+    void 理财收益_非法参数_应返回提示() {
+        String result = tools.calcWealthManagementReturn(10000, 2.85, 0);
+        assertTrue(result.contains("参数无效"), "0 天应返回参数无效提示");
+    }
 }

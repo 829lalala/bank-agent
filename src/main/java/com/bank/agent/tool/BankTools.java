@@ -46,4 +46,19 @@ public class BankTools {
         return String.format("本金 %.2f 元，存期 %d 年，年利率 %.2f%%，到期利息约 %.2f 元，本息合计 %.2f 元",
                 principal, years, rate * 100, interest, principal + interest);
     }
+
+    @Tool(description = "计算理财产品的预估收益（按业绩比较基准年化收益率估算）。当用户询问买某理财产品一段时间能赚多少钱、理财收益怎么算时调用")
+    public String calcWealthManagementReturn(
+            @ToolParam(description = "投入本金，单位元，例如 10000") double principal,
+            @ToolParam(description = "业绩比较基准年化收益率，例如 2.85 表示 2.85%") double annualRatePercent,
+            @ToolParam(description = "预计持有天数，例如 90") int days) {
+        log.info("[工具调用] 计算理财预估收益 principal={} rate={} days={}", principal, annualRatePercent, days);
+        if (principal <= 0 || annualRatePercent < 0 || days <= 0) {
+            return "参数无效：本金与天数必须为正数，收益率不能为负";
+        }
+        // 预估收益 = 本金 × 年化基准 × 持有天数 / 365
+        double profit = principal * (annualRatePercent / 100) * days / 365.0;
+        return String.format("投入 %.2f 元，按业绩比较基准年化 %.2f%% 估算，持有 %d 天的预估收益约 %.2f 元（提示：业绩比较基准不构成收益承诺，理财非保本）",
+                principal, annualRatePercent, days, profit);
+    }
 }
