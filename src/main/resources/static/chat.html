@@ -6,62 +6,38 @@
     <title>星辰小助手 · 企业智能业务助手</title>
     <style>
       /* ============================================================
-         设计主题：私人银行年报质感
-         象牙暖白纸感底 + 深藏青主色 + 金铜点缀 + 衬线标题
-         全部颜色收敛为 CSS 变量，深色模式经 prefers-color-scheme 自动适配
+         设计主题：简约大气
+         白/灰双色阶 + 近黑强调色，去掉一切装饰元素，
+         层次全靠留白、字重与柔和阴影表达。深色模式自动适配。
          ============================================================ */
       :root {
-        --bg: #f6f3ec; /* 象牙暖白（纸感底） */
-        --card: #fffdf8;
-        --ink: #22303f; /* 正文墨色 */
-        --muted: #8d95a1;
-        --navy: #16324f; /* 主深藏青 */
-        --navy-deep: #0e2438;
-        --brass: #a8854f; /* 金铜点缀 */
-        --brass-soft: #c9ab77;
-        --line: #e6ddcc; /* 暖调细边框 */
-        --user-bubble: linear-gradient(135deg, #1d3d5f, #16324f);
+        --bg: #f7f7f8;
+        --card: #ffffff;
+        --ink: #17181c;
+        --muted: #9b9ea6;
+        --line: #e8e8ea;
+        --hover: #efeff1;
+        --user-bubble: #1c1d22;
         --ai-bubble: var(--card);
-        --cite-bg: #f4ede0;
-        --danger: #b3491f;
-        --header-grad: linear-gradient(
-          120deg,
-          #0e2438 0%,
-          #16324f 55%,
-          #1d4064 100%
-        );
-        --shadow-sm:
-          0 1px 2px rgba(34, 48, 63, 0.05), 0 1px 6px rgba(34, 48, 63, 0.04);
-        --shadow-md:
-          0 2px 6px rgba(34, 48, 63, 0.06), 0 8px 24px rgba(34, 48, 63, 0.07);
-        --serif:
-          "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+        --cite-bg: #f0f0f2;
+        --danger: #d4494f;
+        --shadow-sm: 0 1px 2px rgba(23, 24, 28, 0.04);
+        --shadow-md: 0 4px 20px rgba(23, 24, 28, 0.07);
       }
-      /* 深色模式：跟随系统 */
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #0f1722;
-          --card: #16212e;
-          --ink: #e8e3d8;
-          --muted: #7e8996;
-          --navy: #24425f;
-          --navy-deep: #0c1826;
-          --brass: #c9a86c;
-          --brass-soft: #a8854f;
-          --line: #263546;
-          --user-bubble: linear-gradient(135deg, #1d3d5f, #17334f);
+          --bg: #101012;
+          --card: #1a1a1e;
+          --ink: #ececee;
+          --muted: #77787f;
+          --line: #2a2a2f;
+          --hover: #232328;
+          --user-bubble: #e9e9ec;
           --ai-bubble: var(--card);
-          --cite-bg: #2a2620;
-          --header-grad: linear-gradient(
-            120deg,
-            #0a1420 0%,
-            #12283e 55%,
-            #1a3a58 100%
-          );
-          --shadow-sm:
-            0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 6px rgba(0, 0, 0, 0.25);
-          --shadow-md:
-            0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3);
+          --cite-bg: #26262b;
+          --danger: #e07b7f;
+          --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+          --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.45);
         }
       }
       * {
@@ -83,44 +59,34 @@
         flex-direction: column;
       }
 
-      /* ---- 顶栏：深藏青 + 金铜细饰 ---- */
+      /* ---- 顶栏：与背景同色，仅一条细线 ---- */
       header {
-        background: var(--header-grad);
-        color: #f3ede1;
-        padding: 14px 22px;
+        padding: 16px 22px;
         display: flex;
         align-items: center;
-        gap: 13px;
-        border-bottom: 1px solid rgba(200, 171, 119, 0.35);
-        box-shadow: 0 2px 12px rgba(14, 36, 56, 0.25);
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
       }
       .logo {
-        width: 42px;
-        height: 42px;
-        border-radius: 10px;
-        background: linear-gradient(150deg, #d8b87e, #a8854f);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--ink);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: var(--serif);
-        font-size: 21px;
-        font-weight: 700;
-        color: #0e2438;
-        box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, 0.45),
-          0 2px 8px rgba(0, 0, 0, 0.3);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--bg);
       }
       header .title {
-        font-family: var(--serif);
-        font-size: 18px;
+        font-size: 15px;
         font-weight: 600;
-        letter-spacing: 0.06em;
       }
       header .subtitle {
         font-size: 12px;
-        opacity: 0.72;
-        margin-top: 3px;
-        letter-spacing: 0.02em;
+        color: var(--muted);
+        margin-top: 2px;
       }
       .status {
         margin-left: auto;
@@ -128,23 +94,23 @@
         align-items: center;
         gap: 7px;
         font-size: 12px;
-        border: 1px solid rgba(200, 171, 119, 0.4);
-        background: rgba(200, 171, 119, 0.12);
-        padding: 4px 12px;
-        border-radius: 999px;
-        letter-spacing: 0.05em;
+        color: var(--muted);
       }
       .status .dot {
-        width: 7px;
-        height: 7px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
-        background: #7fbf8e;
-        box-shadow: 0 0 6px rgba(127, 191, 142, 0.8);
+        background: #34a853;
         animation: pulse 2.4s infinite;
+      }
+      @media (prefers-color-scheme: dark) {
+        .status .dot {
+          background: #4ade80;
+        }
       }
       @keyframes pulse {
         50% {
-          opacity: 0.35;
+          opacity: 0.3;
         }
       }
 
@@ -152,10 +118,9 @@
       #messages {
         flex: 1;
         overflow-y: auto;
-        padding: 26px 20px 12px;
+        padding: 32px 20px 12px;
         scroll-behavior: smooth;
       }
-      /* 细滚动条（暖灰） */
       #messages::-webkit-scrollbar {
         width: 8px;
       }
@@ -164,60 +129,56 @@
         border-radius: 4px;
       }
       #messages::-webkit-scrollbar-thumb:hover {
-        background: var(--brass-soft);
+        background: var(--muted);
       }
       .inner {
-        max-width: 780px;
+        max-width: 720px;
         margin: 0 auto;
       }
       .msg {
-        margin-bottom: 18px;
+        margin-bottom: 24px;
         display: flex;
-        gap: 11px;
+        gap: 12px;
         align-items: flex-end;
-        animation: rise 0.32s cubic-bezier(0.22, 0.9, 0.36, 1);
+        animation: rise 0.25s ease-out;
       }
       @keyframes rise {
         from {
           opacity: 0;
-          transform: translateY(8px);
+          transform: translateY(6px);
         }
       }
       .msg.user {
         flex-direction: row-reverse;
       }
       .avatar {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: var(--serif);
-        font-size: 15px;
-        font-weight: 700;
+        font-size: 12px;
+        font-weight: 600;
       }
       .msg.ai .avatar {
-        background: linear-gradient(150deg, #d8b87e, #a8854f);
-        color: #0e2438;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        background: var(--ink);
+        color: var(--bg);
       }
       .msg.user .avatar {
         background: transparent;
         border: 1px solid var(--line);
         color: var(--muted);
-        font-size: 12px;
-        font-family: inherit;
       }
       .bubble-wrap {
-        max-width: 78%;
+        max-width: 76%;
       }
       .bubble {
         padding: 13px 17px;
-        border-radius: 14px;
-        line-height: 1.78;
-        font-size: 14.5px;
+        border-radius: 18px;
+        line-height: 1.8;
+        font-size: 15px;
         white-space: pre-wrap;
         word-break: break-word;
       }
@@ -225,54 +186,39 @@
         background: var(--ai-bubble);
         color: var(--ink);
         border: 1px solid var(--line);
-        border-bottom-left-radius: 4px;
+        border-bottom-left-radius: 6px;
         box-shadow: var(--shadow-sm);
-        position: relative;
-      }
-      /* AI 气泡左缘金线：年报页签质感 */
-      .msg.ai .bubble::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 10px;
-        bottom: 10px;
-        width: 2px;
-        border-radius: 1px;
-        background: linear-gradient(to bottom, var(--brass), transparent);
-        opacity: 0.55;
       }
       .msg.user .bubble {
         background: var(--user-bubble);
-        color: #f3ede1;
-        border-bottom-right-radius: 4px;
-        box-shadow: var(--shadow-sm);
-        letter-spacing: 0.01em;
+        color: var(--bg);
+        border-bottom-right-radius: 6px;
+      }
+      @media (prefers-color-scheme: dark) {
+        .msg.user .bubble {
+          color: #101012;
+        }
       }
       .time {
         font-size: 11px;
         color: var(--muted);
-        margin: 5px 4px 0;
-        letter-spacing: 0.04em;
+        margin: 6px 4px 0;
       }
       .msg.user .time {
         text-align: right;
       }
 
-      /* 来源标注：金铜衬线页签 */
+      /* 来源标注：极简灰底 */
       .cite {
         display: inline-block;
         font-size: 11px;
-        font-family: var(--serif);
-        color: var(--brass);
+        color: var(--muted);
         background: var(--cite-bg);
-        border: 1px solid var(--brass-soft);
-        border: 1px solid color-mix(in srgb, var(--brass) 35%, transparent);
-        border-radius: 4px;
-        padding: 0 7px;
+        border-radius: 5px;
+        padding: 1px 8px;
         margin: 0 2px;
         line-height: 18px;
         vertical-align: 1px;
-        letter-spacing: 0.03em;
       }
 
       /* 思考中动画 */
@@ -285,7 +231,7 @@
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: var(--brass-soft);
+        background: var(--muted);
         animation: bounce 1.2s infinite;
       }
       .typing span:nth-child(2) {
@@ -296,17 +242,17 @@
       }
       @keyframes bounce {
         30% {
-          transform: translateY(-5px);
-          background: var(--brass);
+          transform: translateY(-4px);
+          background: var(--ink);
         }
       }
 
-      /* 打字光标：金色 */
+      /* 打字光标 */
       .cursor {
         display: inline-block;
         width: 2px;
         height: 15px;
-        background: var(--brass);
+        background: var(--ink);
         vertical-align: -2px;
         animation: blink 0.8s infinite;
       }
@@ -319,106 +265,48 @@
       /* ---- 欢迎屏 ---- */
       #welcome {
         text-align: center;
-        padding: 56px 20px 10px;
-        animation: rise 0.5s ease;
-      }
-      #welcome .big-logo {
-        width: 68px;
-        height: 68px;
-        border-radius: 16px;
-        margin: 0 auto 20px;
-        background: linear-gradient(150deg, #d8b87e, #a8854f);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--serif);
-        font-size: 34px;
-        color: #0e2438;
-        font-weight: 700;
-        box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, 0.5),
-          0 8px 24px rgba(168, 133, 79, 0.3);
+        padding: 88px 20px 10px;
+        animation: rise 0.4s ease-out;
       }
       #welcome h1 {
-        font-family: var(--serif);
-        font-size: 24px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
+        font-size: 28px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
         color: var(--ink);
-        margin-bottom: 10px;
-      }
-      #welcome .divider {
-        width: 46px;
-        height: 2px;
-        margin: 0 auto 14px;
-        background: linear-gradient(
-          to right,
-          transparent,
-          var(--brass),
-          transparent
-        );
+        margin-bottom: 12px;
       }
       #welcome p {
-        font-size: 13.5px;
+        font-size: 14.5px;
         color: var(--muted);
-        margin-bottom: 28px;
-        letter-spacing: 0.02em;
-      }
-      .chips-label {
-        font-size: 11px;
-        color: var(--muted);
-        letter-spacing: 0.28em;
-        margin-bottom: 14px;
+        margin-bottom: 44px;
+        line-height: 1.7;
       }
       .chips {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
         justify-content: center;
-        max-width: 600px;
+        max-width: 560px;
         margin: 0 auto;
       }
       .chip {
-        background: var(--card);
+        background: transparent;
         border: 1px solid var(--line);
         color: var(--ink);
-        padding: 11px 17px;
-        border-radius: 10px;
+        padding: 11px 18px;
+        border-radius: 999px;
         font-size: 13.5px;
         cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: var(--shadow-sm);
-        position: relative;
+        transition: all 0.18s ease;
         font-family: inherit;
       }
-      /* 左缘金点：hover 时点亮 */
-      .chip::before {
-        content: "";
-        display: inline-block;
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: var(--line);
-        margin-right: 9px;
-        vertical-align: 2px;
-        transition:
-          background 0.2s,
-          box-shadow 0.2s;
-      }
       .chip:hover {
-        border-color: var(--brass);
-        color: var(--navy);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
+        background: var(--card);
+        border-color: var(--muted);
+        box-shadow: var(--shadow-sm);
       }
-      @media (prefers-color-scheme: dark) {
-        .chip:hover {
-          color: var(--brass);
-        }
-      }
-      .chip:hover::before {
-        background: var(--brass);
-        box-shadow: 0 0 6px rgba(168, 133, 79, 0.6);
+      .chip:active {
+        transform: scale(0.98);
       }
 
       /* ---- 输入区 ---- */
@@ -427,33 +315,27 @@
         background: var(--bg);
       }
       .input-bar {
-        max-width: 780px;
+        max-width: 720px;
         margin: 0 auto;
         display: flex;
         gap: 10px;
         align-items: flex-end;
         background: var(--card);
         border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 11px 13px;
+        border-radius: 16px;
+        padding: 11px 12px 11px 17px;
         box-shadow: var(--shadow-md);
-        transition:
-          border-color 0.2s,
-          box-shadow 0.2s;
+        transition: border-color 0.18s;
       }
       .input-bar:focus-within {
-        border-color: var(--brass);
-        box-shadow: var(--shadow-md);
-        box-shadow:
-          var(--shadow-md),
-          0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent);
+        border-color: var(--muted);
       }
       #input {
         flex: 1;
         border: none;
         outline: none;
         resize: none;
-        font-size: 14.5px;
+        font-size: 15px;
         line-height: 1.6;
         max-height: 120px;
         font-family: inherit;
@@ -466,45 +348,41 @@
       #send,
       #stop {
         border: none;
-        border-radius: 9px;
-        padding: 9px 20px;
+        border-radius: 11px;
+        padding: 9px 18px;
         font-size: 14px;
         cursor: pointer;
         font-weight: 500;
-        transition: all 0.2s;
+        transition: all 0.18s;
         flex-shrink: 0;
-        letter-spacing: 0.08em;
         font-family: inherit;
       }
       #send {
-        background: var(--navy);
-        color: #f3ede1;
-        border: 1px solid var(--navy-deep);
+        background: var(--ink);
+        color: var(--bg);
       }
       #send:disabled {
         background: var(--line);
-        border-color: var(--line);
         color: var(--muted);
         cursor: not-allowed;
       }
       #send:not(:disabled):hover {
-        background: var(--navy-deep);
+        opacity: 0.85;
       }
       #stop {
         background: transparent;
-        border: 1px solid var(--danger);
+        border: 1px solid var(--line);
         color: var(--danger);
         display: none;
       }
       #stop:hover {
-        background: color-mix(in srgb, var(--danger) 10%, transparent);
+        background: var(--hover);
       }
       .tip {
         text-align: center;
         font-size: 11.5px;
         color: var(--muted);
         margin-top: 9px;
-        letter-spacing: 0.03em;
       }
 
       /* 无障碍：跟随系统减弱动效 */
@@ -537,13 +415,8 @@
     <div id="messages">
       <div class="inner">
         <div id="welcome">
-          <div class="big-logo">星</div>
           <h1>你好，我是星辰小助手</h1>
-          <div class="divider"></div>
-          <p>
-            我可以查询本行产品知识、帮你查余额、算利息——试试下面的例子，或直接输入问题
-          </p>
-          <div class="chips-label">试 试 这 些</div>
+          <p>查询产品知识、查余额、算利息——试试下面的例子，或直接输入问题</p>
           <div class="chips">
             <button class="chip" onclick="quickAsk(this)">
               大额存单的起购金额是多少？
@@ -663,7 +536,7 @@
       }
       function beautify(text) {
         return escapeHtml(text)
-          .replace(/（依据：([^）]+)）/g, '<span class="cite">◈ $1</span>')
+          .replace(/（依据：([^）]+)）/g, '<span class="cite">$1</span>')
           .replace(/\n/g, "<br>");
       }
 
@@ -720,7 +593,7 @@
           // 流结束：整体美化（来源标注转 pill 样式）
           removeTyping();
           aiBubble.innerHTML =
-            beautify(full) || '<span style="color:#8d95a1">（空响应）</span>';
+            beautify(full) || '<span style="color:#9b9ea6">（空响应）</span>';
           scrollBottom();
         } catch (err) {
           removeTyping();
@@ -729,7 +602,7 @@
               beautify(full) + '<span class="cite">已停止</span>';
           } else {
             aiBubble.innerHTML =
-              '<span style="color:#b3491f">请求失败：' +
+              '<span style="color:#d4494f">请求失败：' +
               escapeHtml(err.message) +
               "，请确认后端已启动</span>";
           }
