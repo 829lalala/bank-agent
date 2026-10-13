@@ -2,7 +2,7 @@ package com.bank.agent.config;
 
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -31,7 +31,7 @@ public class McpConfig {
     }
 
     @Bean
-    public KnowledgeTools knowledgeTools(SimpleVectorStore vectorStore) {
+    public KnowledgeTools knowledgeTools(VectorStore vectorStore) {
         return new KnowledgeTools(vectorStore);
     }
 
