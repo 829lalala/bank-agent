@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -35,7 +35,7 @@ class RagAnswerEvaluationTest {
     ChatClient.Builder chatClientBuilder;
 
     @Autowired
-    SimpleVectorStore vectorStore;
+    VectorStore vectorStore;
 
     @Test
     void 生成层评估() {

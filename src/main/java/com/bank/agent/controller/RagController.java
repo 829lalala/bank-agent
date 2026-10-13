@@ -1,6 +1,5 @@
 package com.bank.agent.controller;
 
-import com.bank.agent.config.RagConfig;
 import com.bank.agent.guard.PathGuard;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
@@ -8,7 +7,7 @@ import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
 import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
@@ -34,10 +33,10 @@ public class RagController {
     /** 知识库默认文档：path 参数是相对 docs/knowledge 目录的路径 */
     private static final String KNOWLEDGE_FILE = "bank-knowledge.md";
 
-    private final SimpleVectorStore vectorStore;
+    private final VectorStore vectorStore;
     private final ChatClient chatClient;
 
-    public RagController(SimpleVectorStore vectorStore, ChatClient.Builder chatClientBuilder) {
+    public RagController(VectorStore vectorStore, ChatClient.Builder chatClientBuilder) {
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.build();
     }
@@ -52,7 +51,7 @@ public class RagController {
      * 格式按扩展名识别：.pdf 走 PagePdfDocumentReader（按页），其余走
      * MarkdownDocumentReader（按标题）。
      *
-     * <p>注意：SimpleVectorStore 是内存实现，摄取后自动落盘，重启时自动恢复。
+     * <p>注意：向量数据持久化在 PostgreSQL（pgvector），重启后无需重新摄取。
      *
      * @param path 文档相对路径（相对 docs/knowledge 目录）
      * @return 摄取统计信息
@@ -94,17 +93,9 @@ public class RagController {
                     + "需要先做 OCR 才能摄取。可用 Ctrl+F 搜索法确认文档类型。";
         }
 
-        // ③ 存：add() 自动向量化并写入向量库
+        // ③ 存：add() 自动向量化并写入向量库（PGVector：数据持久化在 PostgreSQL，
+        //    无需手动落盘，重启后数据仍在）
         vectorStore.add(chunks);
-
-        // ④ 落盘：摄取成功后立即保存到本地文件（比关闭钩子更可靠——强杀也不丢）。
-        //    save() 是 SimpleVectorStore 特有能力，故本类注入具体类型而非 VectorStore 接口
-        try {
-            RagConfig.DATA_FILE.getParentFile().mkdirs();
-            vectorStore.save(RagConfig.DATA_FILE);
-        } catch (Exception e) {
-            return "摄取完成但落盘失败：" + e.getMessage();
-        }
 
         return "摄取完成：" + fileName
                 + "，标题/页段落数=" + sections.size()

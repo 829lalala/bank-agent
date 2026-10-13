@@ -2,7 +2,33 @@
 spring:
   application:
     name: bank-agent # 应用名，会显示在日志和监控中
+  sql:
+    init:
+      # 启动时执行 classpath: schema.sql（建向量表，幂等）。
+      # 默认 EMBEDDED 只对外接库跳过——外接 PostgreSQL 必须显式 ALWAYS
+      mode: always
+  datasource:
+    # PostgreSQL（带 pgvector 扩展）：向量库、会话记忆、长期画像三者共用的持久化库。
+    # 本地开发用 docker 起容器：docker run -d --name bank-agent-pg
+    #   -e POSTGRES_PASSWORD=bankagent -e POSTGRES_DB=bankagent -p 5432:5432 pgvector/pgvector:pg16
+    url: jdbc:postgresql://localhost:5432/bankagent
+    username: postgres
+    password: bankagent
   ai:
+    vectorstore:
+      pgvector:
+        # 向量维度必须与 embedding 模型输出一致（智谱 embedding-3 = 2048 维，
+        # 实测自落盘向量），不匹配会导致入库失败或检索精度归零。
+        # 注：2.0 版建表由 PgVectorStore 启动时自动完成，无 initialize-schema 开关
+        dimensions: 2048
+    chat:
+      memory:
+        repository:
+          jdbc:
+            # 会话记忆表（AI_CHAT_MEMORY）建表模式：值是 DatabaseInitializationMode
+            # 枚举（ALWAYS/EMBEDDED/NEVER），不是布尔——默认 EMBEDDED 只对内嵌库生效，
+            # 外接 PostgreSQL 必须显式 ALWAYS（javap 反编译 Properties 类确认）
+            initialize-schema: ALWAYS
     mcp:
       server:
         # MCP 服务标识：客户端连接后看到的名称与版本

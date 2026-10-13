@@ -6,7 +6,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 
 /**
  * 知识库检索工具：把 RAG 的"检索"环节封装为模型可调用的工具。
@@ -18,9 +18,10 @@ import org.springframework.ai.vectorstore.SimpleVectorStore;
  */
 public class KnowledgeTools {
 
-    private final SimpleVectorStore vectorStore;
+    /** 依赖 VectorStore 接口而非具体实现：换向量库（Simple → PGVector）业务代码零改动 */
+    private final VectorStore vectorStore;
 
-    public KnowledgeTools(SimpleVectorStore vectorStore) {
+    public KnowledgeTools(VectorStore vectorStore) {
         this.vectorStore = vectorStore;
     }
 

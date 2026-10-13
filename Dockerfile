@@ -23,8 +23,7 @@ ENV TZ=Asia/Shanghai
 COPY --from=build /app/target/bank-agent-*.jar app.jar
 COPY docs/knowledge ./docs/knowledge
 
-# 向量库落盘目录：挂载卷后容器重建数据不丢
-VOLUME ["/app/data"]
+# 数据持久化在 PostgreSQL（docker-compose 提供 postgres 服务 + pg-data 卷），无需本地落盘卷
 
 EXPOSE 8080
 

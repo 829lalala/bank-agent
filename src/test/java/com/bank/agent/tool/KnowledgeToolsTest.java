@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 
 /**
  * KnowledgeTools 知识库检索工具单元测试。
  *
- * <p>技术要点：直接 mock SimpleVectorStore（KnowledgeTools 的依赖），而不是
+ * <p>技术要点：直接 mock VectorStore 接口（KnowledgeTools 的依赖），而不是
  * 构造真实向量库 + mock EmbeddingModel。理由：KnowledgeTools 的职责是
  * "调用检索 + 格式化溯源标签"，向量库内部实现（向量化/相似度计算）不是
  * 它的测试范围——单元测试只测"自己这一层"的逻辑，依赖全部隔离。
@@ -28,7 +28,7 @@ import org.springframework.ai.vectorstore.SimpleVectorStore;
  */
 class KnowledgeToolsTest {
 
-    private SimpleVectorStore mockStore;
+    private VectorStore mockStore;
     private KnowledgeTools tools;
 
     /** 预置的两条命中资料（模拟向量库检索结果） */
@@ -38,7 +38,7 @@ class KnowledgeToolsTest {
 
     @BeforeEach
     void setUp() {
-        mockStore = Mockito.mock(SimpleVectorStore.class);
+        mockStore = Mockito.mock(VectorStore.class);
         tools = new KnowledgeTools(mockStore);
     }
 
@@ -76,7 +76,7 @@ class KnowledgeToolsTest {
 
     @Test
     void 检索返回null_应返回未找到提示() {
-        // SimpleVectorStore 契约允许返回 null，必须防御
+        // VectorStore 契约允许返回 null，必须防御
         when(mockStore.similaritySearch(any(SearchRequest.class))).thenReturn(null);
 
         String result = tools.searchBankKnowledge("任何问题");

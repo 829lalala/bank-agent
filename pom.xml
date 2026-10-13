@@ -45,6 +45,34 @@
             <artifactId>spring-ai-vector-store</artifactId>
         </dependency>
 
+        <!-- PGVector 向量存储启动器：把向量数据持久化到 PostgreSQL（pgvector 扩展）。
+             替代 SimpleVectorStore 的"内存 + JSON 落盘"方案，重启不丢、可多实例共享。
+             starter 自动配置 PgVectorStore Bean，业务代码只依赖 VectorStore 接口，零改动 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
+        </dependency>
+
+        <!-- 会话记忆 JDBC 持久化：MessageWindowChatMemory 的历史消息落数据库，
+             替代默认的 InMemoryChatMemoryRepository（重启后同会话不再失忆） -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-chat-memory-repository-jdbc</artifactId>
+        </dependency>
+
+        <!-- PostgreSQL JDBC 驱动：向量库与会话记忆共用一个库 -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- JDBC 支撑（DataSource + JdbcTemplate）：长期画像自建表也走同一数据源 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
         <!-- Markdown 文档读取器：按标题层级把 .md 文件切成语义完整的段落 -->
         <dependency>
             <groupId>org.springframework.ai</groupId>

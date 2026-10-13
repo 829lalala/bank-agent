@@ -8,7 +8,34 @@ services:
       # 密钥从执行 docker compose 命令的终端环境读取（或同目录 .env 文件）
       - ZHIPUAGENT_API_KEY=${ZHIPUAGENT_API_KEY}
       - RUN_LLM_EVAL=false
-    volumes:
-      # 向量库落盘持久化：容器重建不丢数据
-      - ./data:/app/data
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/bankagent
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=bankagent
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+  # PostgreSQL + pgvector 扩展：向量库 / 会话记忆 / 长期画像三者共用的持久化库。
+  # 镜像 pgvector/pgvector 自带 vector 扩展，无需手工安装
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: bank-agent-pg
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=bankagent
+      - POSTGRES_DB=bankagent
+    volumes:
+      # 数据持久化：容器重建不丢（向量库、会话记忆、用户画像都在这里）
+      - pg-data:/var/lib/postgresql/data
+    # 健康检查：bank-agent 等它就绪后再启动（depends_on condition）
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bankagent"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pg-data:

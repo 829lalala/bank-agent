@@ -48,8 +48,8 @@
                     │  │ GLM   │ │ 余额/利息  │ │  知识库检索    │  │      │ Cursor/Claude 可调 │
                     │  └───────┘ └───────────┘ └────┬─────────┘  │      └──────────────────┘
                     │                        ┌──────▼─────────┐   │
-                    │                        │SimpleVectorStore│  │
-                    │                        │ （落盘持久化）    │  │
+                    │                        │ PGVector (PostgreSQL)│
+                    │                        │向量/记忆/画像持久化 │
                     │                        └────────────────┘   │
                     └─────────────────────────────────────────────┘
 ```
@@ -60,7 +60,8 @@
 | ------ | -------------------------------------------------------------------- |
 | 框架   | Spring Boot 4.1.1 / Spring AI 2.0.1 / Java 21                        |
 | 大模型 | 智谱 GLM（glm-4-flash 对话 / embedding-3 向量），OpenAI 兼容端点接入 |
-| 测试   | JUnit 5 + Mockito（21 个单元测试）+ 两层评估集（15 例）              |
+| 存储   | PostgreSQL + pgvector（向量库 / 会话记忆 / 用户画像三合一持久化）    |
+| 测试   | JUnit 5 + Mockito（26 个单元测试）+ 两层评估集（15 例）              |
 | 部署   | Docker 多阶段构建 + docker-compose                                   |
 
 ## 📊 核心指标
@@ -81,10 +82,13 @@
 # 1. 配置密钥（Windows PowerShell）
 $env:ZHIPUAGENT_API_KEY = "你的智谱APIKey"   # 申请：https://open.bigmodel.cn/
 
-# 2. 运行
+# 2. 启动 PostgreSQL（向量库/会话记忆/画像的持久化库）
+docker run -d --name bank-agent-pg -e POSTGRES_PASSWORD=bankagent -e POSTGRES_DB=bankagent -p 5432:5432 pgvector/pgvector:pg16
+
+# 3. 运行（建表自动完成：vector_store / spring_ai_chat_memory / user_memory_facts）
 mvn spring-boot:run
 
-# 3. 首次摄取知识库
+# 4. 首次摄取知识库（仅需一次，数据落 PG，重启不丢）
 curl -X POST http://localhost:8080/rag/load
 ```
 
@@ -92,7 +96,7 @@ curl -X POST http://localhost:8080/rag/load
 
 ```bash
 $env:ZHIPUAGENT_API_KEY = "你的智谱APIKey"
-docker compose up -d          # 向量数据挂载在 ./data，重建不丢
+docker compose up -d          # 应用 + PostgreSQL 双容器，数据挂载 pg-data 卷，重建不丢
 ```
 
 ### 访问入口
@@ -107,7 +111,7 @@ docker compose up -d          # 向量数据挂载在 ./data，重建不丢
 ## 🧪 质量保障
 
 ```bash
-mvn test                                          # 21 个单元测试（免费、离线、毫秒级）
+mvn test                                          # 26 个单元测试（免费、离线、毫秒级；评估类测试需 PG 与 API Key）
 mvn test -Dtest=RagRetrievalEvaluationTest        # 检索层评估（需密钥，调 embedding）
 $env:RUN_LLM_EVAL="true"; mvn test -Dtest=RagAnswerEvaluationTest   # 生成层评估（调 LLM）
 ```
@@ -135,7 +139,7 @@ src/main/java/com/bank/agent/
 │   └── PathGuard                文档路径守卫
 └── observation/ObservabilityAdvisor  耗时/token 观测
 src/test/java/com/bank/agent/
-├── guard/  tool/                21 个单元测试
+├── guard/  tool/                26 个单元测试
 └── evaluation/                  两层评估体系（15 例评估集）
 ```
 
@@ -149,7 +153,7 @@ src/test/java/com/bank/agent/
 
 ## 🗺️ Roadmap
 
-- [ ] PGVector 迁移（生产级向量存储，验证 VectorStore 接口可移植性）
+- [x] ~~PGVector 迁移~~（已完成：向量库/会话记忆/用户画像三合一持久化到 PostgreSQL，VectorStore 接口可移植性验证通过，业务代码零改动；踩坑：pgvector 索引 2000 维上限 vs embedding-3 的 2048 维）
 - [ ] 用户鉴权与会话绑定（查余额工具接入真实用户体系）
 - [x] ~~对比型问题优化~~（已闭环：真因是评估测试重复摄取污染向量库，非 topK 不足；修复摄取幂等性后检索层 100%，Agent 层新增工具描述引导的查询拆分）
 - [ ] CI 流水线（GitHub Actions：测试 + 评估 + 镜像构建）

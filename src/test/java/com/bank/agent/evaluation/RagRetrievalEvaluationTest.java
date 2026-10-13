@@ -10,11 +10,10 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.bank.agent.config.RagConfig;
 import com.bank.agent.controller.RagController;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,7 +34,7 @@ class RagRetrievalEvaluationTest {
     RagController ragController;
 
     @Autowired
-    SimpleVectorStore vectorStore;
+    VectorStore vectorStore;
 
     private static final int TOP_K = 3;
     private static final double PASS_RATE = 0.8;
@@ -43,11 +42,13 @@ class RagRetrievalEvaluationTest {
     @Test
     @Order(1)
     void 前置_摄取知识库() {
-        // 幂等防护：落盘文件存在说明 @SpringBootTest 启动时已恢复历史向量，
-        // 此时再摄取会追加重复文档——重复主题会占满 topK 窗口，把对比型问题
-        // 的另一主题挤出（曾导致 E13 误报 MISS，评估结论失真）
-        if (RagConfig.DATA_FILE.exists()) {
-            System.out.println("[前置] 落盘向量库已存在（启动时已恢复），跳过重复摄取");
+        // 幂等防护：向量库已检索得到知识内容说明此前已摄取过，重复摄取会追加
+        // 重复文档——重复主题会占满 topK 窗口，把对比型问题的另一主题挤出
+        // （曾导致 E13 误报 MISS，评估结论失真）。探测一次检索即可判断
+        List<Document> probe = vectorStore.similaritySearch(
+                SearchRequest.builder().query("大额存单起购金额").topK(1).build());
+        if (probe != null && !probe.isEmpty()) {
+            System.out.println("[前置] 向量库已有知识数据，跳过重复摄取");
             return;
         }
         String result = ragController.load("bank-knowledge.md");

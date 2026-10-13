@@ -1,28 +1,28 @@
 package com.bank.agent.memory;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 /**
  * 跨会话长期记忆服务：维护每个用户的画像事实（姓名、风险偏好、投资偏好等）。
  *
- * <p>与短期记忆的区别：短期记忆（MessageWindowChatMemory）按会话隔离、重启丢失；
- * 长期记忆按**用户**隔离、跨会话存在——"换个会话 ID 依然记得你是谁"。
+ * <p>与短期记忆的区别：短期记忆（MessageWindowChatMemory）按会话隔离、
+ * 长期记忆按**用户**隔离——"换个会话 ID 依然记得你是谁"。
  *
  * <p>三步工作流：
  * 1. recall：生成前取回该用户的已知事实；
  * 2. 注入：事实拼入 System Prompt，让回答个性化（如按风险偏好筛选推荐）；
  * 3. extractAndStore：对话结束后用 LLM 抽取新事实（结构化输出），去重合并入画像。
  *
- * <p>存储说明：内存 Map（重启丢失，教学够用）；生产换数据库/Redis。
- * 抽取为同步调用（每轮多 1 次 LLM 调用，约 1~2s）；生产可改异步。
+ * <p>存储说明：PostgreSQL 表 user_memory_facts（应用启动时幂等建表），
+ * 重启不丢、可多实例共享；教学版原先用内存 Map，重启即清空——这正是
+ * 迁移数据库的动机。生产还可以加：加密存储（画像属个人信息）、TTL 清理。
+ * 抽取为同步调用（每轮多 1 次 LLM 调用，约 1s）；生产可改异步。
  */
 @Service
 public class LongTermMemoryService {
@@ -32,9 +32,7 @@ public class LongTermMemoryService {
     /** 每用户画像上限：防无限膨胀，超出淘汰最早的事实 */
     private static final int MAX_FACTS = 20;
 
-    /** userId → 画像事实列表 */
-    private final Map<String, List<String>> store = new ConcurrentHashMap<>();
-
+    private final JdbcTemplate jdbc;
     private final ChatClient chatClient;
 
     /** 事实抽取提示词：只抽取用户明确表达的事实，禁止推测 */
@@ -53,13 +51,25 @@ public class LongTermMemoryService {
     public record UserFacts(List<String> facts) {
     }
 
-    public LongTermMemoryService(ChatClient.Builder chatClientBuilder) {
+    public LongTermMemoryService(JdbcTemplate jdbcTemplate, ChatClient.Builder chatClientBuilder) {
+        this.jdbc = jdbcTemplate;
         this.chatClient = chatClientBuilder.build();
+        // 幂等建表：IF NOT EXISTS 保证每次启动都安全（与 starter 自动建表同一思路，
+        // 生产环境建议用 Flyway 等迁移工具管理 DDL，而不是应用启动时执行）
+        jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS user_memory_facts (
+                    id         BIGSERIAL PRIMARY KEY,
+                    user_id    VARCHAR(64)  NOT NULL,
+                    fact       VARCHAR(500) NOT NULL,
+                    created_at TIMESTAMP    DEFAULT now()
+                )
+                """);
     }
 
-    /** 取回用户画像事实 */
+    /** 取回用户画像事实（按插入顺序，最早的在前） */
     public List<String> recall(String userId) {
-        return store.getOrDefault(userId, List.of());
+        return jdbc.queryForList(
+                "SELECT fact FROM user_memory_facts WHERE user_id = ? ORDER BY id", String.class, userId);
     }
 
     /**
@@ -105,20 +115,27 @@ public class LongTermMemoryService {
             if (result == null || result.facts() == null || result.facts().isEmpty()) {
                 return; // 本轮没有新事实
             }
-            List<String> facts = new ArrayList<>(recall(userId));
+            List<String> facts = recall(userId);
             boolean added = false;
             for (String fact : result.facts()) {
                 if (fact != null && !fact.isBlank() && !facts.contains(fact.trim())) {
+                    jdbc.update("INSERT INTO user_memory_facts (user_id, fact) VALUES (?, ?)",
+                            userId, fact.trim());
                     facts.add(fact.trim());
                     added = true;
                 }
             }
-            while (facts.size() > MAX_FACTS) {
-                facts.remove(0); // 超上限淘汰最早的
+            int excess = facts.size() - MAX_FACTS;
+            if (excess > 0) {
+                // 超上限淘汰最早的（id 最小的先插入）
+                jdbc.update("""
+                        DELETE FROM user_memory_facts WHERE id IN (
+                            SELECT id FROM user_memory_facts WHERE user_id = ? ORDER BY id ASC LIMIT ?
+                        )""", userId, excess);
             }
-            store.put(userId, facts);
             if (added) {
-                log.info("[长期记忆] userId={} 画像更新，新增 {} 条，当前共 {} 条", userId, result.facts().size(), facts.size());
+                log.info("[长期记忆] userId={} 画像更新，新增 {} 条，当前共 {} 条",
+                        userId, result.facts().size(), facts.size());
             }
         } catch (Exception e) {
             // 记忆抽取失败不应影响主流程：记完整堆栈便于排查
