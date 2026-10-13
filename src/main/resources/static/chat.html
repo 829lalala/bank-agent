@@ -338,10 +338,17 @@
         resize: none;
         font-size: 15px;
         line-height: 1.6;
-        max-height: 120px;
+        max-height: 132px;
         font-family: inherit;
         background: transparent;
         color: var(--ink);
+        /* 上下 8px 与发送按钮等高：单行时文字基线对齐（按钮 39px ≈ 24px 行高 + 16px 内边距） */
+        padding: 8px 0;
+        overflow-y: auto;
+        scrollbar-width: none; /* Firefox：隐藏滚动条 UI（滚轮/键盘仍可滚动） */
+      }
+      #input::-webkit-scrollbar {
+        display: none; /* Chrome/Edge：隐藏滚动条，消除占位文字换行时出现的上下箭头按钮 */
       }
       #input::placeholder {
         color: var(--muted);
@@ -507,11 +514,7 @@
 
     <footer>
       <div class="input-bar">
-        <textarea
-          id="input"
-          rows="1"
-          placeholder="输入问题，Enter 发送 / Shift+Enter 换行"
-        ></textarea>
+        <textarea id="input" rows="1" placeholder="输入你的问题…"></textarea>
         <button id="send">发送</button>
         <button id="stop">■ 停止</button>
       </div>
@@ -688,10 +691,10 @@
         }
       }
 
-      // 输入框高度自适应
+      // 输入框高度自适应（132px ≈ CSS max-height，两处保持同步）
       function autoGrow() {
         input.style.height = "auto";
-        input.style.height = Math.min(input.scrollHeight, 120) + "px";
+        input.style.height = Math.min(input.scrollHeight, 132) + "px";
       }
 
       function quickAsk(btn) {
