@@ -82,8 +82,8 @@
 # 1. 配置密钥（Windows PowerShell）
 $env:ZHIPUAGENT_API_KEY = "你的智谱APIKey"   # 申请：https://open.bigmodel.cn/
 
-# 2. 启动 PostgreSQL（向量库/会话记忆/画像的持久化库）
-docker run -d --name bank-agent-pg -e POSTGRES_PASSWORD=bankagent -e POSTGRES_DB=bankagent -p 5432:5432 pgvector/pgvector:pg16
+# 2. 启动 PostgreSQL（compose 管理，与完整部署共用配置，避免容器名冲突）
+docker compose up -d postgres
 
 # 3. 运行（建表自动完成：vector_store / spring_ai_chat_memory / user_memory_facts）
 mvn spring-boot:run
