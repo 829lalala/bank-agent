@@ -5,81 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>星辰小助手 · 企业智能业务助手</title>
     <style>
+      /* ============================================================
+         设计主题：私人银行年报质感
+         象牙暖白纸感底 + 深藏青主色 + 金铜点缀 + 衬线标题
+         全部颜色收敛为 CSS 变量，深色模式经 prefers-color-scheme 自动适配
+         ============================================================ */
       :root {
-        --primary: #2563eb;
-        --primary-dark: #1e40af;
-        --bg: #f1f5f9;
-        --card: #ffffff;
-        --user-bubble: linear-gradient(135deg, #2563eb, #1d4ed8);
-        --ai-bubble: #ffffff;
-        --text: #1e293b;
-        --muted: #94a3b8;
-        --gold: #f59e0b;
+        --bg: #f6f3ec; /* 象牙暖白（纸感底） */
+        --card: #fffdf8;
+        --ink: #22303f; /* 正文墨色 */
+        --muted: #8d95a1;
+        --navy: #16324f; /* 主深藏青 */
+        --navy-deep: #0e2438;
+        --brass: #a8854f; /* 金铜点缀 */
+        --brass-soft: #c9ab77;
+        --line: #e6ddcc; /* 暖调细边框 */
+        --user-bubble: linear-gradient(135deg, #1d3d5f, #16324f);
+        --ai-bubble: var(--card);
+        --cite-bg: #f4ede0;
+        --danger: #b3491f;
+        --header-grad: linear-gradient(
+          120deg,
+          #0e2438 0%,
+          #16324f 55%,
+          #1d4064 100%
+        );
+        --shadow-sm:
+          0 1px 2px rgba(34, 48, 63, 0.05), 0 1px 6px rgba(34, 48, 63, 0.04);
+        --shadow-md:
+          0 2px 6px rgba(34, 48, 63, 0.06), 0 8px 24px rgba(34, 48, 63, 0.07);
+        --serif:
+          "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+      }
+      /* 深色模式：跟随系统 */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1722;
+          --card: #16212e;
+          --ink: #e8e3d8;
+          --muted: #7e8996;
+          --navy: #24425f;
+          --navy-deep: #0c1826;
+          --brass: #c9a86c;
+          --brass-soft: #a8854f;
+          --line: #263546;
+          --user-bubble: linear-gradient(135deg, #1d3d5f, #17334f);
+          --ai-bubble: var(--card);
+          --cite-bg: #2a2620;
+          --header-grad: linear-gradient(
+            120deg,
+            #0a1420 0%,
+            #12283e 55%,
+            #1a3a58 100%
+          );
+          --shadow-sm:
+            0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 6px rgba(0, 0, 0, 0.25);
+          --shadow-md:
+            0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
       }
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
+      html {
+        height: 100%;
+      }
       body {
         font-family:
-          -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+          -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI",
+          sans-serif;
         background: var(--bg);
-        height: 100vh;
+        color: var(--ink);
+        height: 100%;
         display: flex;
         flex-direction: column;
       }
-      /* ---- 顶栏 ---- */
+
+      /* ---- 顶栏：深藏青 + 金铜细饰 ---- */
       header {
-        background: linear-gradient(135deg, #1e3a8a, #2563eb);
-        color: #fff;
-        padding: 14px 20px;
+        background: var(--header-grad);
+        color: #f3ede1;
+        padding: 14px 22px;
         display: flex;
         align-items: center;
-        gap: 12px;
-        box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
+        gap: 13px;
+        border-bottom: 1px solid rgba(200, 171, 119, 0.35);
+        box-shadow: 0 2px 12px rgba(14, 36, 56, 0.25);
       }
       .logo {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, var(--gold), #fbbf24);
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        background: linear-gradient(150deg, #d8b87e, #a8854f);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
-        font-weight: bold;
-        color: #1e3a8a;
+        font-family: var(--serif);
+        font-size: 21px;
+        font-weight: 700;
+        color: #0e2438;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.45),
+          0 2px 8px rgba(0, 0, 0, 0.3);
       }
       header .title {
-        font-size: 17px;
+        font-family: var(--serif);
+        font-size: 18px;
         font-weight: 600;
+        letter-spacing: 0.06em;
       }
       header .subtitle {
         font-size: 12px;
-        opacity: 0.75;
-        margin-top: 2px;
+        opacity: 0.72;
+        margin-top: 3px;
+        letter-spacing: 0.02em;
       }
       .status {
         margin-left: auto;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 7px;
         font-size: 12px;
-        background: rgba(255, 255, 255, 0.15);
-        padding: 4px 10px;
+        border: 1px solid rgba(200, 171, 119, 0.4);
+        background: rgba(200, 171, 119, 0.12);
+        padding: 4px 12px;
         border-radius: 999px;
+        letter-spacing: 0.05em;
       }
       .status .dot {
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
-        background: #4ade80;
-        animation: pulse 2s infinite;
+        background: #7fbf8e;
+        box-shadow: 0 0 6px rgba(127, 191, 142, 0.8);
+        animation: pulse 2.4s infinite;
       }
       @keyframes pulse {
         50% {
-          opacity: 0.4;
+          opacity: 0.35;
         }
       }
 
@@ -87,18 +152,36 @@
       #messages {
         flex: 1;
         overflow-y: auto;
-        padding: 20px;
+        padding: 26px 20px 12px;
         scroll-behavior: smooth;
       }
+      /* 细滚动条（暖灰） */
+      #messages::-webkit-scrollbar {
+        width: 8px;
+      }
+      #messages::-webkit-scrollbar-thumb {
+        background: var(--line);
+        border-radius: 4px;
+      }
+      #messages::-webkit-scrollbar-thumb:hover {
+        background: var(--brass-soft);
+      }
       .inner {
-        max-width: 760px;
+        max-width: 780px;
         margin: 0 auto;
       }
       .msg {
-        margin-bottom: 16px;
+        margin-bottom: 18px;
         display: flex;
-        gap: 10px;
+        gap: 11px;
         align-items: flex-end;
+        animation: rise 0.32s cubic-bezier(0.22, 0.9, 0.36, 1);
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
       }
       .msg.user {
         flex-direction: row-reverse;
@@ -106,66 +189,90 @@
       .avatar {
         width: 34px;
         height: 34px;
-        border-radius: 10px;
+        border-radius: 9px;
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-family: var(--serif);
         font-size: 15px;
-        font-weight: bold;
+        font-weight: 700;
       }
       .msg.ai .avatar {
-        background: linear-gradient(135deg, var(--gold), #fbbf24);
-        color: #1e3a8a;
+        background: linear-gradient(150deg, #d8b87e, #a8854f);
+        color: #0e2438;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
       }
       .msg.user .avatar {
-        background: #e2e8f0;
-        color: #64748b;
-        font-size: 13px;
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+        font-family: inherit;
       }
       .bubble-wrap {
         max-width: 78%;
       }
       .bubble {
-        padding: 12px 16px;
-        border-radius: 16px;
-        line-height: 1.7;
+        padding: 13px 17px;
+        border-radius: 14px;
+        line-height: 1.78;
         font-size: 14.5px;
         white-space: pre-wrap;
         word-break: break-word;
       }
       .msg.ai .bubble {
         background: var(--ai-bubble);
-        color: var(--text);
+        color: var(--ink);
+        border: 1px solid var(--line);
         border-bottom-left-radius: 4px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        box-shadow: var(--shadow-sm);
+        position: relative;
+      }
+      /* AI 气泡左缘金线：年报页签质感 */
+      .msg.ai .bubble::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 10px;
+        bottom: 10px;
+        width: 2px;
+        border-radius: 1px;
+        background: linear-gradient(to bottom, var(--brass), transparent);
+        opacity: 0.55;
       }
       .msg.user .bubble {
         background: var(--user-bubble);
-        color: #fff;
+        color: #f3ede1;
         border-bottom-right-radius: 4px;
+        box-shadow: var(--shadow-sm);
+        letter-spacing: 0.01em;
       }
       .time {
         font-size: 11px;
         color: var(--muted);
-        margin: 4px 4px 0;
+        margin: 5px 4px 0;
+        letter-spacing: 0.04em;
       }
       .msg.user .time {
         text-align: right;
       }
 
-      /* 来源标注 pill */
+      /* 来源标注：金铜衬线页签 */
       .cite {
         display: inline-block;
         font-size: 11px;
-        color: var(--primary-dark);
-        background: #dbeafe;
-        border: 1px solid #bfdbfe;
-        border-radius: 6px;
-        padding: 0 6px;
+        font-family: var(--serif);
+        color: var(--brass);
+        background: var(--cite-bg);
+        border: 1px solid var(--brass-soft);
+        border: 1px solid color-mix(in srgb, var(--brass) 35%, transparent);
+        border-radius: 4px;
+        padding: 0 7px;
         margin: 0 2px;
         line-height: 18px;
         vertical-align: 1px;
+        letter-spacing: 0.03em;
       }
 
       /* 思考中动画 */
@@ -175,10 +282,10 @@
         padding: 6px 2px;
       }
       .typing span {
-        width: 7px;
-        height: 7px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
-        background: var(--muted);
+        background: var(--brass-soft);
         animation: bounce 1.2s infinite;
       }
       .typing span:nth-child(2) {
@@ -190,16 +297,16 @@
       @keyframes bounce {
         30% {
           transform: translateY(-5px);
-          background: var(--primary);
+          background: var(--brass);
         }
       }
 
-      /* 打字光标 */
+      /* 打字光标：金色 */
       .cursor {
         display: inline-block;
         width: 2px;
         height: 15px;
-        background: var(--primary);
+        background: var(--brass);
         vertical-align: -2px;
         animation: blink 0.8s infinite;
       }
@@ -212,63 +319,106 @@
       /* ---- 欢迎屏 ---- */
       #welcome {
         text-align: center;
-        padding: 40px 20px 10px;
-        animation: fadein 0.5s ease;
-      }
-      @keyframes fadein {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
+        padding: 56px 20px 10px;
+        animation: rise 0.5s ease;
       }
       #welcome .big-logo {
-        width: 64px;
-        height: 64px;
-        border-radius: 18px;
-        margin: 0 auto 16px;
-        background: linear-gradient(135deg, var(--gold), #fbbf24);
+        width: 68px;
+        height: 68px;
+        border-radius: 16px;
+        margin: 0 auto 20px;
+        background: linear-gradient(150deg, #d8b87e, #a8854f);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 32px;
-        color: #1e3a8a;
-        font-weight: bold;
-        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+        font-family: var(--serif);
+        font-size: 34px;
+        color: #0e2438;
+        font-weight: 700;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.5),
+          0 8px 24px rgba(168, 133, 79, 0.3);
       }
       #welcome h1 {
-        font-size: 22px;
-        color: var(--text);
-        margin-bottom: 8px;
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: var(--ink);
+        margin-bottom: 10px;
+      }
+      #welcome .divider {
+        width: 46px;
+        height: 2px;
+        margin: 0 auto 14px;
+        background: linear-gradient(
+          to right,
+          transparent,
+          var(--brass),
+          transparent
+        );
       }
       #welcome p {
         font-size: 13.5px;
         color: var(--muted);
-        margin-bottom: 24px;
+        margin-bottom: 28px;
+        letter-spacing: 0.02em;
+      }
+      .chips-label {
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.28em;
+        margin-bottom: 14px;
       }
       .chips {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
         justify-content: center;
-        max-width: 560px;
+        max-width: 600px;
         margin: 0 auto;
       }
       .chip {
         background: var(--card);
-        border: 1px solid #e2e8f0;
-        color: var(--text);
-        padding: 10px 16px;
-        border-radius: 12px;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        padding: 11px 17px;
+        border-radius: 10px;
         font-size: 13.5px;
         cursor: pointer;
-        transition: all 0.2s;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        font-family: inherit;
+      }
+      /* 左缘金点：hover 时点亮 */
+      .chip::before {
+        content: "";
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--line);
+        margin-right: 9px;
+        vertical-align: 2px;
+        transition:
+          background 0.2s,
+          box-shadow 0.2s;
       }
       .chip:hover {
-        border-color: var(--primary);
-        color: var(--primary);
+        border-color: var(--brass);
+        color: var(--navy);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        box-shadow: var(--shadow-md);
+      }
+      @media (prefers-color-scheme: dark) {
+        .chip:hover {
+          color: var(--brass);
+        }
+      }
+      .chip:hover::before {
+        background: var(--brass);
+        box-shadow: 0 0 6px rgba(168, 133, 79, 0.6);
       }
 
       /* ---- 输入区 ---- */
@@ -277,20 +427,26 @@
         background: var(--bg);
       }
       .input-bar {
-        max-width: 760px;
+        max-width: 780px;
         margin: 0 auto;
         display: flex;
         gap: 10px;
         align-items: flex-end;
         background: var(--card);
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 10px 12px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-        transition: border-color 0.2s;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 11px 13px;
+        box-shadow: var(--shadow-md);
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
       }
       .input-bar:focus-within {
-        border-color: var(--primary);
+        border-color: var(--brass);
+        box-shadow: var(--shadow-md);
+        box-shadow:
+          var(--shadow-md),
+          0 0 0 3px color-mix(in srgb, var(--brass) 14%, transparent);
       }
       #input {
         flex: 1;
@@ -298,44 +454,71 @@
         outline: none;
         resize: none;
         font-size: 14.5px;
-        line-height: 1.5;
+        line-height: 1.6;
         max-height: 120px;
         font-family: inherit;
         background: transparent;
-        color: var(--text);
+        color: var(--ink);
+      }
+      #input::placeholder {
+        color: var(--muted);
       }
       #send,
       #stop {
         border: none;
-        border-radius: 10px;
-        padding: 9px 18px;
+        border-radius: 9px;
+        padding: 9px 20px;
         font-size: 14px;
         cursor: pointer;
         font-weight: 500;
         transition: all 0.2s;
         flex-shrink: 0;
+        letter-spacing: 0.08em;
+        font-family: inherit;
       }
       #send {
-        background: var(--primary);
-        color: #fff;
+        background: var(--navy);
+        color: #f3ede1;
+        border: 1px solid var(--navy-deep);
       }
       #send:disabled {
-        background: #cbd5e1;
+        background: var(--line);
+        border-color: var(--line);
+        color: var(--muted);
         cursor: not-allowed;
       }
       #send:not(:disabled):hover {
-        background: var(--primary-dark);
+        background: var(--navy-deep);
       }
       #stop {
-        background: #fee2e2;
-        color: #dc2626;
+        background: transparent;
+        border: 1px solid var(--danger);
+        color: var(--danger);
         display: none;
+      }
+      #stop:hover {
+        background: color-mix(in srgb, var(--danger) 10%, transparent);
       }
       .tip {
         text-align: center;
         font-size: 11.5px;
         color: var(--muted);
-        margin-top: 8px;
+        margin-top: 9px;
+        letter-spacing: 0.03em;
+      }
+
+      /* 无障碍：跟随系统减弱动效 */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+        #messages {
+          scroll-behavior: auto;
+        }
       }
     </style>
   </head>
@@ -356,9 +539,11 @@
         <div id="welcome">
           <div class="big-logo">星</div>
           <h1>你好，我是星辰小助手</h1>
+          <div class="divider"></div>
           <p>
             我可以查询本行产品知识、帮你查余额、算利息——试试下面的例子，或直接输入问题
           </p>
+          <div class="chips-label">试 试 这 些</div>
           <div class="chips">
             <button class="chip" onclick="quickAsk(this)">
               大额存单的起购金额是多少？
@@ -478,7 +663,7 @@
       }
       function beautify(text) {
         return escapeHtml(text)
-          .replace(/（依据：([^）]+)）/g, '<span class="cite">📎 $1</span>')
+          .replace(/（依据：([^）]+)）/g, '<span class="cite">◈ $1</span>')
           .replace(/\n/g, "<br>");
       }
 
@@ -535,7 +720,7 @@
           // 流结束：整体美化（来源标注转 pill 样式）
           removeTyping();
           aiBubble.innerHTML =
-            beautify(full) || '<span style="color:#94a3b8">（空响应）</span>';
+            beautify(full) || '<span style="color:#8d95a1">（空响应）</span>';
           scrollBottom();
         } catch (err) {
           removeTyping();
@@ -544,7 +729,7 @@
               beautify(full) + '<span class="cite">已停止</span>';
           } else {
             aiBubble.innerHTML =
-              '<span style="color:#dc2626">请求失败：' +
+              '<span style="color:#b3491f">请求失败：' +
               escapeHtml(err.message) +
               "，请确认后端已启动</span>";
           }
