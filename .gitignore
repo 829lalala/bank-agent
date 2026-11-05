@@ -15,12 +15,17 @@ docs/knowledge/*.pdf
 *.iml
 .vscode/
 *.code-workspace
+# 编辑器插件生成的本地技能目录（含大量第三方模板，与项目无关）
+.trae/
 
 # ---- 日志与临时文件 ----
 *.log
 *.tmp
 .DS_Store
 Thumbs.db
+# Windows 保留设备名：某些工具误建后无法用常规 API 删除，
+# 不忽略会让 `git add .` 直接报 "short read while indexing nul"
+nul
 
 # ---- 环境变量文件（密钥安全） ----
 .env
