@@ -32,6 +32,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- 登录认证与接口访问控制 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Spring AI OpenAI 启动器：智谱提供 OpenAI 兼容端点，复用此适配器 -->
         <!-- 注意：1.0 正式版后构件命名从 spring-ai-openai-spring-boot-starter 改为 spring-ai-starter-model-openai -->
         <dependency>
@@ -105,6 +111,17 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- 不启动数据库即可验证真实网页安全过滤链 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <!-- BOM（Bill of Materials，物料清单）：统一管理 Spring AI 全家桶的版本，
@@ -123,6 +140,16 @@
 
     <build>
         <plugins>
+            <!-- 默认只运行离线测试；评估测试须用 -Dtest=类名 显式触发。 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/evaluation/*EvaluationTest.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

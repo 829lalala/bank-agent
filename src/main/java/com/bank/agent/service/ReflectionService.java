@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.bank.agent.memory.LongTermMemoryService;
 import com.bank.agent.prompts.Prompts;
 import com.bank.agent.tool.BankTools;
+import com.bank.agent.tool.AccountBalanceTool;
 import com.bank.agent.tool.KnowledgeTools;
 
 /**
@@ -21,8 +22,9 @@ import com.bank.agent.tool.KnowledgeTools;
  * <p>设计要点：
  * 1. 评估者独立于生成者（不同提示词、独立调用），且**挂载知识库检索工具**——
  *    能核对回答中的数字是否与资料一致，而不只是看逻辑通顺；
- * 2. 评审结果用结构化输出（entity 映射为 ReviewResult record），解析失败降级为通过，
- *    防止评估异常导致死循环；
+ * 2. 评审结果用结构化输出（entity 映射为 ReviewResult record），解析失败时**降级为"未知"**
+ *    而不是"通过"——拿不到评审结论时既不放行也不判失败，避免死循环的同时不污染质量指标
+ *    （ReviewResult.reviewValid = false）；
  * 3. 修正轮有上限（防成本失控），超上限即使未通过也返回最后一次答案并标记 pass=false。
  */
 @Service
@@ -60,8 +62,24 @@ public class ReflectionService {
     private final BankTools bankTools;
     private final KnowledgeTools knowledgeTools;
 
-    /** 单轮评审结果（结构化输出映射目标） */
-    public record ReviewResult(boolean pass, int score, List<String> issues, String suggestion) {
+    /**
+     * 单轮评审结果（结构化输出映射目标）。
+     *
+     * <p>三态语义：
+     * <ul>
+     *   <li>reviewValid=true, pass=true：评审有效且判定合格；</li>
+     *   <li>reviewValid=true, pass=false：评审有效但判定不合格，需要修正；</li>
+     *   <li>reviewValid=false：评审本身失败（调用异常/JSON 解析失败），结论未知——
+     *       此时 {@code pass} 字段无意义，调用方**不得据此认为回答合格**。</li>
+     * </ul>
+     */
+    public record ReviewResult(boolean pass, int score, List<String> issues, String suggestion,
+                               boolean reviewValid) {
+
+        /** 评审未知：调用方据此把该轮排除在质量指标之外，而不是当作满分通过 */
+        static ReviewResult unknown(String reason) {
+            return new ReviewResult(false, -1, List.of(), reason, false);
+        }
     }
 
     /** 单轮记录：该轮答案 + 评审结论 */
@@ -88,14 +106,15 @@ public class ReflectionService {
         int round = 0;
         // 长期画像注入：每个生成/修正轮共用同一份个性化 System Prompt
         String system = Prompts.AGENT_SYSTEM_PROMPT + memory.buildContext(userId);
+        AccountBalanceTool accountBalanceTool = new AccountBalanceTool(userId);
 
         while (true) {
             round++;
             // 生成（第 1 轮）或修正（后续轮）
             if (round == 1) {
-                answer = generate(question, system);
+                answer = generate(question, system, accountBalanceTool);
             } else {
-                answer = revise(question, answer, review.suggestion(), system);
+                answer = revise(question, answer, review.suggestion(), system, accountBalanceTool);
             }
 
             // 评审
@@ -103,9 +122,12 @@ public class ReflectionService {
             rounds.add(new RoundRecord(round, answer, review));
             log.info("[反思] 第{}轮 score={} pass={} issues={}", round, review.score(), review.pass(), review.issues());
 
-            // 通过，或达到修正上限：结束
-            if (review.pass() || round > MAX_REVISE_ROUNDS) {
-                boolean passed = review.pass();
+            // 结束条件：明确通过 / 评审结论未知（没有可信建议可据此修正）/ 达到修正上限
+            if (review.pass() || !review.reviewValid() || round > MAX_REVISE_ROUNDS) {
+                // passedReview 语义收紧：只有"评审有效且判定合格"才算通过。
+                // 评审未知时如实返回 false——宁可让调用方看到"没通过评审"，
+                // 也不能把一次失败的质量检查伪装成满分。
+                boolean passed = review.reviewValid() && review.pass();
                 // 对话结束：抽取长期画像事实（失败不影响主流程）
                 memory.extractAndStore(userId, question, answer);
                 return new ReflectionOutcome(question, answer, passed, rounds,
@@ -115,10 +137,10 @@ public class ReflectionService {
     }
 
     /** 生成初答（与 /agent/chat 相同链路：Agent 人设 + 长期画像 + 全部工具） */
-    private String generate(String question, String system) {
+    private String generate(String question, String system, AccountBalanceTool accountBalanceTool) {
         return chatClient.prompt()
                 .system(system)
-                .tools(bankTools, knowledgeTools)
+                .tools(bankTools, knowledgeTools, accountBalanceTool)
                 .user(question)
                 .call()
                 .content();
@@ -135,21 +157,23 @@ public class ReflectionService {
                     .call()
                     .entity(ReviewResult.class);
         } catch (Exception e) {
-            // 评审异常降级为通过：宁可通过也不死循环（生产可改为重试或人工兜底）
-            log.warn("[反思] 评审解析失败，降级为通过: {}", e.getMessage());
-            return new ReviewResult(true, 10, List.of(), "评审异常降级");
+            // 评审降级为"未知"：既不判合格（会污染质量指标）也不判不合格（会触发无意义的修正轮）。
+            // 修正轮已由 MAX_REVISE_ROUNDS 兜底，不会因此死循环。
+            log.warn("[反思] 评审调用或解析失败，本轮结论标记为未知: {}", e.getMessage());
+            return ReviewResult.unknown("评审异常：" + e.getMessage());
         }
     }
 
     /** 修正：携带评审意见重新生成完整回答 */
-    private String revise(String question, String previousAnswer, String feedback, String system) {
+    private String revise(String question, String previousAnswer, String feedback, String system,
+                          AccountBalanceTool accountBalanceTool) {
         String user = "【用户问题】\n" + question
                 + "\n\n【你的上一轮回答】\n" + previousAnswer
                 + "\n\n【评审意见】\n" + feedback
                 + "\n\n请根据评审意见输出修正后的完整回答（不要提及评审过程）。";
         return chatClient.prompt()
                 .system(system)
-                .tools(bankTools, knowledgeTools)
+                .tools(bankTools, knowledgeTools, accountBalanceTool)
                 .user(user)
                 .call()
                 .content();
