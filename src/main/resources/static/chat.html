@@ -104,6 +104,14 @@
         background: #34a853;
         animation: pulse 2.4s infinite;
       }
+      #logout {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        padding: 5px 9px;
+        cursor: pointer;
+      }
       @media (prefers-color-scheme: dark) {
         .status .dot {
           background: #4ade80;
@@ -491,7 +499,8 @@
         </div>
       </div>
       <div class="status">
-        <span class="dot"></span><span class="status-text">在线</span>
+        <span class="dot"></span><span id="account-name" class="status-text">正在确认账号…</span>
+        <button id="logout" type="button">退出</button>
       </div>
     </header>
 
@@ -505,7 +514,7 @@
               大额存单的起购金额是多少？
             </button>
             <button class="chip" onclick="quickAsk(this)">
-              查一下张三的账户余额
+              查一下我的账户余额
             </button>
             <button class="chip" onclick="quickAsk(this)">
               存5万元两年定期利息是多少？
@@ -536,6 +545,43 @@
       const input = document.getElementById("input");
       const sendBtn = document.getElementById("send");
       const stopBtn = document.getElementById("stop");
+
+      document.getElementById("logout").addEventListener("click", async () => {
+        const button = document.getElementById("logout");
+        button.disabled = true;
+        try {
+          const response = await fetch("/agent/csrf");
+          if (!response.ok) throw new Error("无法获取退出令牌");
+          const csrf = await response.json();
+          const form = document.createElement("form");
+          form.method = "post";
+          form.action = "/logout";
+          const token = document.createElement("input");
+          token.type = "hidden";
+          token.name = csrf.parameterName;
+          token.value = csrf.token;
+          form.appendChild(token);
+          document.body.appendChild(form);
+          sessionStorage.removeItem("convId");
+          form.submit();
+        } catch (error) {
+          button.disabled = false;
+          alert("退出失败，请重试。");
+        }
+      });
+
+      // 账号名称只从已登录的服务端读取，页面不自行指定用户身份。
+      fetch("/agent/me")
+        .then((response) => {
+          if (!response.ok) throw new Error("无法读取登录账号");
+          return response.json();
+        })
+        .then((account) => {
+          document.getElementById("account-name").textContent = account.username;
+        })
+        .catch(() => {
+          document.getElementById("account-name").textContent = "账号读取失败";
+        });
 
       // 会话 ID：同一浏览器会话内复用，保证多轮记忆生效
       let conversationId = sessionStorage.getItem("convId");

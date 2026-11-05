@@ -18,15 +18,6 @@ public class BankTools {
     private static final org.slf4j.Logger log =
             org.slf4j.LoggerFactory.getLogger(BankTools.class);
 
-    @Tool(description = "查询指定客户的银行账户余额。当用户询问账户余额、卡里还有多少钱、查余额时调用")
-    public String getAccountBalance(
-            @ToolParam(description = "客户姓名，例如：张三") String customerName) {
-        log.info("[工具调用] 查询余额 customerName={}", customerName);
-        // 模拟数据：真实场景此处查询核心系统（需登录态与权限校验）
-        double balance = 8888.50;
-        return String.format("客户 %s 的账户余额为 %.2f 元", customerName, balance);
-    }
-
     @Tool(description = "计算定期存款（整存整取）到期利息。当用户询问存一笔钱到期利息多少、本息合计多少时调用")
     public String calcFixedDepositInterest(
             @ToolParam(description = "存款本金，单位元，例如 10000") double principal,

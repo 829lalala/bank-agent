@@ -7,6 +7,7 @@ import com.bank.agent.prompts.Prompts;
 import com.bank.agent.service.ReflectionService;
 import com.bank.agent.service.ReflectionService.ReflectionOutcome;
 import com.bank.agent.tool.BankTools;
+import com.bank.agent.tool.AccountBalanceTool;
 import com.bank.agent.tool.KnowledgeTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -14,6 +15,9 @@ import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,7 +25,10 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Agent 接口：工具调用 + Agentic RAG + 多轮记忆的完整智能助手。
@@ -38,6 +45,18 @@ public class AgentController {
     private final Advisor memoryAdvisor;
     private final ReflectionService reflectionService;
     private final LongTermMemoryService memory;
+
+    /** 页面只需显示账号名称，不向浏览器返回密码或内部权限信息。 */
+    @GetMapping("/me")
+    public Map<String, String> currentUser(Principal principal) {
+        return Map.of("username", principal.getName());
+    }
+
+    /** 退出表单使用的防伪令牌。 */
+    @GetMapping("/csrf")
+    public Map<String, String> csrfToken(CsrfToken token) {
+        return Map.of("parameterName", token.getParameterName(), "token", token.getToken());
+    }
 
     public AgentController(BankTools bankTools, KnowledgeTools knowledgeTools,
                            ChatMemory chatMemory, ChatClient.Builder chatClientBuilder,
@@ -61,8 +80,16 @@ public class AgentController {
      */
     @GetMapping("/chat")
     public ResponseEntity<Flux<String>> chat(@RequestParam String q,
-                                             @RequestParam(defaultValue = "default") String conversationId,
-                                             @RequestParam(defaultValue = "guest") String userId) {
+                                             @RequestParam String conversationId,
+                                             Principal principal) {
+        // 浏览器提供的编号仅用于区分同一账号的会话，不能充当用户身份。
+        try {
+            UUID.fromString(conversationId);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "会话编号格式无效");
+        }
+        String userId = principal.getName();
+        String scopedConversationId = userId + ":" + conversationId;
         // 输入护栏：在进入模型之前拦截（省钱、快速失败、比模型自我审查更可靠）
         String blocked = GuardRail.check(q);
         if (blocked != null) {
@@ -75,11 +102,11 @@ public class AgentController {
         Flux<String> body = chatClient.prompt()
                 // 长期画像注入：个性化 System Prompt（无事实时不追加）
                 .system(Prompts.AGENT_SYSTEM_PROMPT + memory.buildContext(userId))
-                .tools(bankTools, knowledgeTools)
+                .tools(bankTools, knowledgeTools, new AccountBalanceTool(userId))
                 .user(q)
                 .advisors(memoryAdvisor)
                 // 2.0 新要求：记忆顾问必须显式拿到会话 ID，通过 advisor 参数传递
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, scopedConversationId))
                 .advisors(new ObservabilityAdvisor()) // 可观测性：耗时 + token 用量
                 .stream()
                 .content()
@@ -95,12 +122,11 @@ public class AgentController {
     /**
      * 查看用户长期画像（调试与管理用）。
      *
-     * @param userId 用户标识
-     * @return 该用户当前的全部画像事实
+     * @return 当前登录用户的全部画像事实
      */
     @GetMapping("/memory")
-    public List<String> memory(@RequestParam(defaultValue = "guest") String userId) {
-        return memory.recall(userId);
+    public List<String> memory(Principal principal) {
+        return memory.recall(principal.getName());
     }
 
     /**
@@ -112,17 +138,17 @@ public class AgentController {
      * 但回答经过质量评审与自动修正，返回评审轨迹便于审计。
      *
      * @param q      用户问题
-     * @param userId 用户标识：注入长期画像 + 对话后更新画像
+     * @param principal 当前登录用户：注入其长期画像，并在对话后更新其画像
      * @return 最终答案 + 评审轨迹
      */
     @GetMapping("/chat-reflect")
     public ReflectionOutcome chatReflect(@RequestParam String q,
-                                         @RequestParam(defaultValue = "guest") String userId) {
+                                         Principal principal) {
         // 输入护栏：与 /chat 相同标准
         String blocked = GuardRail.check(q);
         if (blocked != null) {
             return new ReflectionOutcome(q, blocked, false, List.of(), 0);
         }
-        return reflectionService.reflect(q, userId);
+        return reflectionService.reflect(q, principal.getName());
     }
 }

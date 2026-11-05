@@ -12,13 +12,6 @@ class BankToolsTest {
     private final BankTools tools = new BankTools();
 
     @Test
-    void 查询余额_应返回模拟金额() {
-        String result = tools.getAccountBalance("张三");
-        assertTrue(result.contains("张三"), "结果应包含客户名");
-        assertTrue(result.contains("8888.50"), "结果应包含模拟数据金额（工具真实执行的证据）");
-    }
-
-    @Test
     void 利息_一年期_数学正确() {
         // 10000 × 1.55% × 1 = 155.00
         String result = tools.calcFixedDepositInterest(10000, 1);
